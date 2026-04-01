@@ -1,56 +1,5 @@
 import { useState, useEffect } from "react";
 
-/*
- * ┌──────────────────────────────────────────────────────┐
- * │  SETUP: Google Sheets Integration                     │
- * │                                                        │
- * │  1. Create a Google Sheet with these column headers:   │
- * │     A: Timestamp                                       │
- * │     B: Name                                            │
- * │     C: Email                                           │
- * │     D: Phone                                           │
- * │     E: Complexity Score                                │
- * │     F: Engagement Model                                │
- * │     G: Archetype                                       │
- * │     H: Secondary Archetype                             │
- * │     I: Day 1 Priority                                  │
- * │     J: Day 30 Priority                                 │
- * │     K: All Answers (JSON)                              │
- * │                                                        │
- * │  2. Go to Extensions → Apps Script                     │
- * │  3. Paste this code:                                   │
- * │                                                        │
- * │  function doPost(e) {                                  │
- * │    var sheet = SpreadsheetApp                           │
- * │      .getActiveSpreadsheet()                           │
- * │      .getActiveSheet();                                │
- * │    var data = JSON.parse(e.postData.contents);         │
- * │    sheet.appendRow([                                   │
- * │      new Date(),                                       │
- * │      data.name,                                        │
- * │      data.email,                                       │
- * │      data.phone,                                       │
- * │      data.complexityScore,                             │
- * │      data.engagementModel,                             │
- * │      data.archetype,                                   │
- * │      data.secondaryArchetype,                          │
- * │      data.dayOne,                                      │
- * │      data.dayThirty,                                   │
- * │      JSON.stringify(data.answers)                      │
- * │    ]);                                                 │
- * │    return ContentService                               │
- * │      .createTextOutput(                                │
- * │        JSON.stringify({ status: "ok" })                │
- * │      )                                                 │
- * │      .setMimeType(ContentService.MimeType.JSON);       │
- * │  }                                                     │
- * │                                                        │
- * │  4. Deploy → New deployment → Web app                  │
- * │     Execute as: Me                                     │
- * │     Who has access: Anyone                             │
- * │  5. Copy the URL and paste it below ↓                  │
- * └──────────────────────────────────────────────────────┘
- */
 const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzo_2fc4r1dMBJp4EE-cgKPVAHvT9KgaawXEGGQ1MVrTT8DX1u3Hy0_eRYhUXyvXyENiQ/exec";
 
 /* ─────────────────────────── PHASE 1 ─────────────────────────── */
@@ -226,13 +175,13 @@ const PHASE2_WRITEIN_QUESTIONS = [
     id: "day_one",
     question: "If your Chief of Staff started today, what would you hand them first?",
     subtext: "The most urgent thing on your plate — the thing you'd brief them on in the first hour",
-    placeholder: "e.g. \"I need someone to take over our quarterly planning process — it's a mess and the exec team is losing confidence in our ability to ship on time.\"",
+    placeholder: 'e.g. "I need someone to take over our quarterly planning process — it\'s a mess and the exec team is losing confidence in our ability to ship on time."',
   },
   {
     id: "day_thirty",
     question: "What about 30 days from now — what should they own by then?",
     subtext: "Think about what 'settled in and delivering' looks like after a month",
-    placeholder: "e.g. \"By day 30 I'd want them running the weekly leadership sync, owning the OKR dashboard, and preparing a board deck draft without my input.\"",
+    placeholder: 'e.g. "By day 30 I\'d want them running the weekly leadership sync, owning the OKR dashboard, and preparing a board deck draft without my input."',
   },
 ];
 
@@ -241,8 +190,8 @@ const COS_TYPES = {
   strategic: {
     title: "Strategic Chief of Staff",
     tagline: "Your thinking partner. Your second brain.",
-    color: "#2c5f8a",
-    accent: "#e8f0f7",
+    color: "#000080",
+    accent: "#d0d0e8",
     icon: "🧭",
     description: "You need someone who can operate at altitude — synthesizing complex information, running high-stakes projects, and ensuring the organization's long-term direction stays sharp while you handle the day-to-day demands of leadership.",
     whatTheyDo: [
@@ -270,8 +219,8 @@ const COS_TYPES = {
   operational: {
     title: "Operational Chief of Staff",
     tagline: "The machine that makes your machine work.",
-    color: "#8b6914",
-    accent: "#faf5e8",
+    color: "#006400",
+    accent: "#d0e8d0",
     icon: "⚙️",
     description: "Your organization's biggest gap is between decisions and execution. You need someone who can build the operating system — the cadences, rituals, tracking mechanisms, and accountability structures that turn leadership intent into organizational action.",
     whatTheyDo: [
@@ -299,8 +248,8 @@ const COS_TYPES = {
   external: {
     title: "External-Facing Chief of Staff",
     tagline: "Your voice in every room you can't be in.",
-    color: "#6b3a6b",
-    accent: "#f5edf5",
+    color: "#800080",
+    accent: "#e8d0e8",
     icon: "🤝",
     description: "Your primary need is someone who can represent you with the people who matter most — the board, investors, key partners, regulators, and other external stakeholders. This person needs executive presence, political savvy, and your deep trust.",
     whatTheyDo: [
@@ -328,8 +277,8 @@ const COS_TYPES = {
   growth: {
     title: "Transformation Chief of Staff",
     tagline: "A scaling architect for what comes next.",
-    color: "#c4532b",
-    accent: "#fdf0ec",
+    color: "#8B4513",
+    accent: "#f0dcc8",
     icon: "📈",
     description: "Your organization is changing faster than your operating model can keep up. You need someone who can redesign how you work while the plane is in flight — standing up new teams, codifying culture, integrating acquisitions, and building the next version of your company without breaking the current one.",
     whatTheyDo: [
@@ -407,6 +356,7 @@ function submitToSheets(payload) {
   try {
     var url = GOOGLE_SHEETS_WEBHOOK_URL + "?payload=" + encodeURIComponent(JSON.stringify(payload));
     var img = new Image();
+    img.crossOrigin = "anonymous";
     img.src = url;
     return true;
   } catch (err) {
@@ -415,9 +365,483 @@ function submitToSheets(payload) {
   }
 }
 
+/* ─────────────────────────── WIN2K PRIMITIVES ─────────────────────────── */
+const W2K_STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Tahoma:wght@400;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background-color: #008080;
+    background-image: url("data:image/svg+xml,%3Csvg width='4' height='4' viewBox='0 0 4 4' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='1' height='1' fill='%23007070' x='0' y='0'/%3E%3Crect width='1' height='1' fill='%23009090' x='2' y='2'/%3E%3C/svg%3E");
+    font-family: 'Tahoma', 'MS Sans Serif', Arial, sans-serif;
+    font-size: 11px;
+    color: #000;
+    min-height: 100vh;
+    padding: 16px;
+  }
+
+  /* ── Window chrome ── */
+  .win2k-window {
+    background: #d4d0c8;
+    border-top: 2px solid #ffffff;
+    border-left: 2px solid #ffffff;
+    border-right: 2px solid #808080;
+    border-bottom: 2px solid #808080;
+    box-shadow: 2px 2px 0 #000000, inset 1px 1px 0 #dfdfdf;
+  }
+
+  .win2k-titlebar {
+    background: linear-gradient(to right, #000080, #1084d0);
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 11px;
+    padding: 3px 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+    height: 20px;
+  }
+
+  .win2k-titlebar-btns {
+    display: flex;
+    gap: 2px;
+  }
+
+  .win2k-titlebar-btn {
+    width: 16px;
+    height: 14px;
+    background: #d4d0c8;
+    border-top: 1px solid #ffffff;
+    border-left: 1px solid #ffffff;
+    border-right: 1px solid #808080;
+    border-bottom: 1px solid #808080;
+    font-size: 9px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+    color: #000;
+    line-height: 1;
+  }
+
+  .win2k-content {
+    padding: 12px;
+  }
+
+  /* ── Raised/sunken panel ── */
+  .win2k-raised {
+    border-top: 1px solid #ffffff;
+    border-left: 1px solid #ffffff;
+    border-right: 1px solid #808080;
+    border-bottom: 1px solid #808080;
+  }
+  .win2k-sunken {
+    border-top: 1px solid #808080;
+    border-left: 1px solid #808080;
+    border-right: 1px solid #ffffff;
+    border-bottom: 1px solid #ffffff;
+  }
+  .win2k-groove {
+    border: 2px groove #808080;
+  }
+
+  /* ── Buttons ── */
+  .win2k-btn {
+    background: #d4d0c8;
+    border-top: 2px solid #ffffff;
+    border-left: 2px solid #ffffff;
+    border-right: 2px solid #808080;
+    border-bottom: 2px solid #808080;
+    font-family: 'Tahoma', 'MS Sans Serif', Arial, sans-serif;
+    font-size: 11px;
+    padding: 4px 16px;
+    cursor: pointer;
+    min-width: 75px;
+    height: 23px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #000;
+    white-space: nowrap;
+  }
+  .win2k-btn:hover { background: #e0ddd4; }
+  .win2k-btn:active, .win2k-btn.pressed {
+    border-top: 2px solid #808080;
+    border-left: 2px solid #808080;
+    border-right: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+    padding: 5px 15px 3px 17px;
+  }
+  .win2k-btn:disabled {
+    color: #888;
+    cursor: default;
+  }
+  .win2k-btn:disabled:hover { background: #d4d0c8; }
+
+  .win2k-btn-default {
+    border: 2px solid #000;
+    outline: 2px solid #d4d0c8;
+  }
+
+  /* ── Radio / option buttons ── */
+  .win2k-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 11px;
+    font-family: 'Tahoma', 'MS Sans Serif', Arial, sans-serif;
+    color: #000;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+  }
+  .win2k-option:hover { background: #000080; color: #fff; }
+  .win2k-option:hover .win2k-option-radio { border-color: #fff; background: #fff; }
+  .win2k-option.selected { background: #000080; color: #fff; }
+
+  .win2k-option-radio {
+    width: 12px;
+    height: 12px;
+    border: 2px solid #808080;
+    border-radius: 50%;
+    background: #fff;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 1px 1px 0 #404040;
+  }
+  .win2k-option.selected .win2k-option-radio::after {
+    content: '';
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #000080;
+  }
+
+  /* ── Text inputs ── */
+  .win2k-input {
+    width: 100%;
+    padding: 2px 4px;
+    border-top: 2px solid #808080;
+    border-left: 2px solid #808080;
+    border-right: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+    font-family: 'Tahoma', 'MS Sans Serif', Arial, sans-serif;
+    font-size: 11px;
+    background: #ffffff;
+    color: #000;
+    outline: none;
+    height: 21px;
+  }
+  .win2k-input:focus {
+    outline: 1px dotted #000;
+    outline-offset: -2px;
+  }
+  .win2k-textarea {
+    width: 100%;
+    padding: 4px;
+    border-top: 2px solid #808080;
+    border-left: 2px solid #808080;
+    border-right: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+    font-family: 'Tahoma', 'MS Sans Serif', Arial, sans-serif;
+    font-size: 11px;
+    background: #ffffff;
+    color: #000;
+    outline: none;
+    resize: vertical;
+    min-height: 100px;
+  }
+  .win2k-textarea:focus {
+    outline: 1px dotted #000;
+    outline-offset: -2px;
+  }
+
+  /* ── Progress bar ── */
+  .win2k-progressbar {
+    background: #ffffff;
+    border-top: 1px solid #808080;
+    border-left: 1px solid #808080;
+    border-right: 1px solid #ffffff;
+    border-bottom: 1px solid #ffffff;
+    height: 16px;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+  }
+  .win2k-progressbar-fill {
+    height: 100%;
+    background: repeating-linear-gradient(
+      90deg,
+      #000080 0px,
+      #000080 8px,
+      #1c74c4 8px,
+      #1c74c4 10px
+    );
+    transition: width 0.3s ease;
+  }
+
+  /* ── Status bar ── */
+  .win2k-statusbar {
+    background: #d4d0c8;
+    border-top: 1px solid #808080;
+    padding: 2px 8px;
+    font-size: 10px;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  .win2k-statusbar-panel {
+    border-top: 1px solid #808080;
+    border-left: 1px solid #808080;
+    border-right: 1px solid #ffffff;
+    border-bottom: 1px solid #ffffff;
+    padding: 1px 8px;
+    min-width: 80px;
+  }
+
+  /* ── Separator ── */
+  .win2k-sep {
+    border: none;
+    border-top: 1px solid #808080;
+    border-bottom: 1px solid #ffffff;
+    margin: 8px 0;
+  }
+
+  /* ── Groupbox / fieldset ── */
+  .win2k-groupbox {
+    border: 1px solid #808080;
+    border-top: 2px groove #808080;
+    padding: 12px 8px 8px;
+    margin-top: 8px;
+    position: relative;
+  }
+  .win2k-groupbox-legend {
+    position: absolute;
+    top: -8px;
+    left: 8px;
+    background: #d4d0c8;
+    padding: 0 4px;
+    font-weight: bold;
+    font-size: 11px;
+  }
+
+  /* ── List items ── */
+  .win2k-list-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 3px 4px;
+    font-size: 11px;
+    border-bottom: 1px solid #e8e4dc;
+    line-height: 1.4;
+  }
+  .win2k-list-item::before {
+    content: '►';
+    color: #000080;
+    flex-shrink: 0;
+    font-size: 9px;
+    margin-top: 2px;
+  }
+
+  /* ── Note box ── */
+  .win2k-note {
+    background: #ffffcc;
+    border: 1px solid #c0b000;
+    padding: 6px 8px;
+    font-size: 11px;
+    line-height: 1.5;
+    display: flex;
+    gap: 8px;
+  }
+  .win2k-note::before {
+    content: 'ℹ';
+    font-size: 14px;
+    color: #000080;
+    flex-shrink: 0;
+  }
+
+  /* ── Taskbar ── */
+  .win2k-taskbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 28px;
+    background: #d4d0c8;
+    border-top: 2px solid #ffffff;
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+    gap: 4px;
+    z-index: 100;
+  }
+  .win2k-start-btn {
+    background: #d4d0c8;
+    border-top: 2px solid #ffffff;
+    border-left: 2px solid #ffffff;
+    border-right: 2px solid #808080;
+    border-bottom: 2px solid #808080;
+    font-family: 'Tahoma', 'MS Sans Serif', Arial, sans-serif;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 2px 8px;
+    cursor: default;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .win2k-clock {
+    margin-left: auto;
+    border-top: 1px solid #808080;
+    border-left: 1px solid #808080;
+    border-right: 1px solid #ffffff;
+    border-bottom: 1px solid #ffffff;
+    padding: 2px 8px;
+    font-size: 10px;
+  }
+  .win2k-taskbar-task {
+    background: #d4d0c8;
+    border-top: 1px solid #808080;
+    border-left: 1px solid #808080;
+    border-right: 1px solid #ffffff;
+    border-bottom: 1px solid #ffffff;
+    font-size: 11px;
+    padding: 2px 8px;
+    min-width: 120px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: default;
+    height: 22px;
+    font-family: 'Tahoma', 'MS Sans Serif', Arial, sans-serif;
+  }
+
+  /* ── Tooltip icon ── */
+  .win2k-icon-sm {
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  /* ── Comp table ── */
+  .win2k-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  .win2k-table th {
+    background: #000080;
+    color: #fff;
+    padding: 3px 8px;
+    text-align: left;
+    font-weight: bold;
+  }
+  .win2k-table td {
+    padding: 3px 8px;
+    border-bottom: 1px solid #e0ddd4;
+  }
+  .win2k-table tr:nth-child(even) td {
+    background: #eae8e0;
+  }
+
+  /* ── Scrollable area ── */
+  .win2k-scrollable {
+    overflow-y: auto;
+    max-height: calc(100vh - 160px);
+    padding-right: 4px;
+  }
+  .win2k-scrollable::-webkit-scrollbar {
+    width: 16px;
+  }
+  .win2k-scrollable::-webkit-scrollbar-track {
+    background: #d4d0c8;
+    border-left: 1px solid #808080;
+  }
+  .win2k-scrollable::-webkit-scrollbar-thumb {
+    background: #d4d0c8;
+    border-top: 1px solid #ffffff;
+    border-left: 1px solid #ffffff;
+    border-right: 1px solid #808080;
+    border-bottom: 1px solid #808080;
+    min-height: 20px;
+  }
+  .win2k-scrollable::-webkit-scrollbar-button {
+    background: #d4d0c8;
+    border-top: 1px solid #ffffff;
+    border-left: 1px solid #ffffff;
+    border-right: 1px solid #808080;
+    border-bottom: 1px solid #808080;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+  }
+`;
+
+function Win2KClock() {
+  const [time, setTime] = useState("");
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+      setTime(now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
+    };
+    tick();
+    const id = setInterval(tick, 10000);
+    return () => clearInterval(id);
+  }, []);
+  return <div className="win2k-clock">{time}</div>;
+}
+
+function Win2KWindow({ title, icon = "🖥️", children, style }) {
+  return (
+    <div className="win2k-window" style={{ ...style }}>
+      <div className="win2k-titlebar">
+        <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <span style={{ fontSize: 12 }}>{icon}</span>
+          {title}
+        </span>
+        <div className="win2k-titlebar-btns">
+          <div className="win2k-titlebar-btn">_</div>
+          <div className="win2k-titlebar-btn">□</div>
+          <div className="win2k-titlebar-btn" style={{ color: "red", fontWeight: 900 }}>✕</div>
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function ProgressBar({ value, max }) {
+  const pct = Math.round((value / max) * 100);
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2, fontSize: 10 }}>
+        <span>Progress</span>
+        <span>{value} of {max} ({pct}%)</span>
+      </div>
+      <div className="win2k-progressbar">
+        <div className="win2k-progressbar-fill" style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
 /* ─────────────────────────── COMPONENT ─────────────────────────── */
 export default function ChiefOfStaffAssessment() {
-  // phase: intro | phase1 | phase1result | phase2intro | phase2mc | phase2writein | final
   const [phase, setPhase] = useState("intro");
   const [step, setStep] = useState(0);
   const [p1Answers, setP1Answers] = useState({});
@@ -425,7 +849,6 @@ export default function ChiefOfStaffAssessment() {
   const [otherTexts, setOtherTexts] = useState({});
   const [writeInAnswers, setWriteInAnswers] = useState({});
   const [selected, setSelected] = useState(null);
-  const [fadeIn, setFadeIn] = useState(true);
   const [p1Result, setP1Result] = useState(null);
   const [p2Result, setP2Result] = useState(null);
 
@@ -437,48 +860,48 @@ export default function ChiefOfStaffAssessment() {
 
   const [showOtherInput, setShowOtherInput] = useState(false);
   const [otherValue, setOtherValue] = useState("");
-
-  // Write-in current value (for the textarea)
   const [writeInValue, setWriteInValue] = useState("");
 
-  useEffect(() => { setFadeIn(false); const t = setTimeout(() => setFadeIn(true), 30); return () => clearTimeout(t); }, [phase, step]);
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [phase]);
 
-  // ── Phase 1 handlers
   const handleP1Select = (qId, value) => {
     setSelected(value);
-    const na = { ...p1Answers, [qId]: value }; setP1Answers(na);
+    const na = { ...p1Answers, [qId]: value };
+    setP1Answers(na);
     setTimeout(() => {
       setSelected(null);
       if (step + 1 < PHASE1_QUESTIONS.length) setStep(step + 1);
       else { setP1Result(getPhase1Result(na)); setPhase("phase1result"); }
-    }, 350);
+    }, 300);
   };
 
-  // ── Phase 2 MC handlers
   const handleP2MCSelect = (qId, value) => {
-    setSelected(value); setShowOtherInput(false); setOtherValue("");
-    const na = { ...p2Answers, [qId]: value }; setP2Answers(na);
+    setSelected(value);
+    setShowOtherInput(false);
+    setOtherValue("");
+    const na = { ...p2Answers, [qId]: value };
+    setP2Answers(na);
     setTimeout(() => {
       setSelected(null);
       if (step + 1 < PHASE2_MC_QUESTIONS.length) setStep(step + 1);
       else { setStep(0); setWriteInValue(""); setPhase("phase2writein"); }
-    }, 350);
+    }, 300);
   };
 
   const handleOtherClick = () => { setShowOtherInput(true); setOtherValue(""); };
   const handleOtherSubmit = (qId) => {
     if (!otherValue.trim()) return;
     setOtherTexts((p) => ({ ...p, [qId]: otherValue.trim() }));
-    const na = { ...p2Answers, [qId]: "other" }; setP2Answers(na);
-    setShowOtherInput(false); setOtherValue("");
+    const na = { ...p2Answers, [qId]: "other" };
+    setP2Answers(na);
+    setShowOtherInput(false);
+    setOtherValue("");
     setTimeout(() => {
       if (step + 1 < PHASE2_MC_QUESTIONS.length) setStep(step + 1);
       else { setStep(0); setWriteInValue(""); setPhase("phase2writein"); }
-    }, 350);
+    }, 300);
   };
 
-  // ── Phase 2 Write-in handlers
   const currentWriteIn = phase === "phase2writein" ? PHASE2_WRITEIN_QUESTIONS[step] : null;
 
   const handleWriteInNext = () => {
@@ -486,7 +909,8 @@ export default function ChiefOfStaffAssessment() {
       setWriteInAnswers((p) => ({ ...p, [currentWriteIn.id]: writeInValue.trim() }));
     }
     if (step + 1 < PHASE2_WRITEIN_QUESTIONS.length) {
-      setStep(step + 1); setWriteInValue("");
+      setStep(step + 1);
+      setWriteInValue("");
     } else {
       setP2Result(getPhase2Result(p2Answers));
       setPhase("final");
@@ -495,16 +919,22 @@ export default function ChiefOfStaffAssessment() {
 
   const handleWriteInSkip = () => {
     if (step + 1 < PHASE2_WRITEIN_QUESTIONS.length) {
-      setStep(step + 1); setWriteInValue("");
+      setStep(step + 1);
+      setWriteInValue("");
     } else {
       setP2Result(getPhase2Result(p2Answers));
       setPhase("final");
     }
   };
 
-  // ── Navigation
   const goBack = () => {
-    if (step > 0) { setSelected(null); setShowOtherInput(false); setOtherValue(""); setWriteInValue(""); setStep(step - 1); }
+    if (step > 0) {
+      setSelected(null);
+      setShowOtherInput(false);
+      setOtherValue("");
+      setWriteInValue("");
+      setStep(step - 1);
+    }
   };
 
   const restart = () => {
@@ -518,7 +948,6 @@ export default function ChiefOfStaffAssessment() {
   const startPhase2 = () => { setStep(0); setPhase("phase2intro"); };
   const beginPhase2 = () => { setStep(0); setShowOtherInput(false); setOtherValue(""); setPhase("phase2mc"); };
 
-  // ── Lead submit
   const handleLeadSubmit = () => {
     if (!leadEmail.trim()) return;
     setLeadSubmitting(true);
@@ -532,338 +961,506 @@ export default function ChiefOfStaffAssessment() {
       dayThirty: writeInAnswers.day_thirty || "",
       answers: { phase1: p1Answers, phase2: p2Answers, otherResponses: otherTexts, writeIns: writeInAnswers },
     });
-    setLeadSubmitted(true); setLeadSubmitting(false);
+    setLeadSubmitted(true);
+    setLeadSubmitting(false);
   };
 
   const finalType = p2Result ? COS_TYPES[p2Result.primary] : null;
   const secondaryType = p2Result?.secondary ? COS_TYPES[p2Result.secondary] : null;
-
-  // Total phase 2 steps for progress bar
   const totalP2Steps = PHASE2_MC_QUESTIONS.length + PHASE2_WRITEIN_QUESTIONS.length;
   const currentP2Step = phase === "phase2mc" ? step : phase === "phase2writein" ? PHASE2_MC_QUESTIONS.length + step : 0;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#faf8f5", fontFamily: "'Newsreader', 'Georgia', serif", color: "#1a1a1a", position: "relative" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,300;1,6..72,400&family=DM+Mono:wght@300;400;500&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        .fade-enter { opacity: 0; transform: translateY(12px); }
-        .fade-active { opacity: 1; transform: translateY(0); transition: opacity 0.5s ease, transform 0.5s ease; }
-        .option-btn { width: 100%; text-align: left; padding: 18px 24px; background: transparent; border: 1.5px solid #d4d0ca; border-radius: 4px; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 400; color: #1a1a1a; transition: all 0.2s ease; display: flex; align-items: center; gap: 16px; letter-spacing: 0.01em; }
-        .option-btn:hover { border-color: #1a1a1a; background: #f0ede8; }
-        .option-btn.selected { border-color: #1a1a1a; background: #1a1a1a; color: #faf8f5; }
-        .option-btn.other-active { border-color: #1a1a1a; background: #f7f5f2; }
-        .progress-segment { height: 2px; background: #d4d0ca; flex: 1; border-radius: 1px; transition: background 0.4s ease; }
-        .progress-segment.filled { background: #1a1a1a; }
-        .back-btn { background: none; border: none; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 12px; color: #999; letter-spacing: 0.05em; text-transform: uppercase; padding: 8px 0; transition: color 0.2s; }
-        .back-btn:hover { color: #1a1a1a; }
-        .primary-btn { background: #1a1a1a; color: #faf8f5; border: none; padding: 16px 48px; font-family: 'DM Mono', monospace; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: all 0.25s ease; border-radius: 2px; }
-        .primary-btn:hover { background: #333; transform: translateY(-1px); }
-        .primary-btn:disabled { background: #ccc; cursor: default; transform: none; }
-        .secondary-btn { background: none; border: 1.5px solid #d4d0ca; padding: 12px 32px; font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; color: #666; transition: all 0.2s; border-radius: 2px; }
-        .secondary-btn:hover { border-color: #1a1a1a; color: #1a1a1a; }
-        .result-tag { display: inline-block; padding: 6px 14px; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; border-radius: 2px; color: white; }
-        .trait-item { padding: 10px 0; border-bottom: 1px solid #eae7e2; font-family: 'DM Mono', monospace; font-size: 13px; color: #444; display: flex; align-items: baseline; gap: 12px; line-height: 1.5; }
-        .section-label { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: #999; margin-bottom: 16px; }
-        .divider { display: flex; align-items: center; gap: 16px; margin: 40px 0; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: #ccc; }
-        .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #e4e0da; }
-        .signal-row { padding: 8px 0; font-family: 'DM Mono', monospace; font-size: 12px; color: #555; display: flex; align-items: baseline; gap: 10px; line-height: 1.5; }
-        .model-card { border: 2px solid; border-radius: 6px; padding: 28px; position: relative; overflow: hidden; }
-        .cta-box { background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); border-radius: 6px; padding: 32px; color: #faf8f5; position: relative; overflow: hidden; }
-        .cta-box::before { content: ''; position: absolute; top: -50%; right: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 70% 30%, rgba(255,255,255,0.04) 0%, transparent 60%); pointer-events: none; }
-        .cta-btn { display: inline-block; background: #faf8f5; color: #1a1a1a; border: none; padding: 14px 36px; font-family: 'DM Mono', monospace; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: all 0.25s ease; border-radius: 3px; text-decoration: none; font-weight: 500; }
-        .cta-btn:hover { background: #fff; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
-        .interview-q { padding: 14px 18px; background: #f7f5f2; border-left: 3px solid; margin-bottom: 8px; border-radius: 0 4px 4px 0; font-size: 14px; line-height: 1.6; color: #444; font-style: italic; font-weight: 300; }
-        .lead-input { width: 100%; padding: 14px 16px; border: 1.5px solid #d4d0ca; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 14px; background: transparent; color: #1a1a1a; outline: none; transition: border-color 0.2s; }
-        .lead-input:focus { border-color: #1a1a1a; }
-        .lead-input::placeholder { color: #bbb; }
-        .other-input { width: 100%; padding: 14px 16px; border: 1.5px solid #1a1a1a; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 14px; background: #faf8f5; color: #1a1a1a; outline: none; margin-top: 8px; }
-        .other-input::placeholder { color: #bbb; }
-        .other-submit { margin-top: 8px; padding: 10px 24px; background: #1a1a1a; color: #faf8f5; border: none; border-radius: 3px; font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: background 0.2s; }
-        .other-submit:hover { background: #333; }
-        .other-submit:disabled { background: #ccc; cursor: default; }
-        .success-card { border: 2px solid #4a7c6f; border-radius: 6px; padding: 28px; text-align: center; background: linear-gradient(135deg, #f5faf7 0%, #faf8f5 100%); }
-        .writein-textarea { width: 100%; min-height: 140px; padding: 18px; border: 1.5px solid #d4d0ca; border-radius: 6px; font-family: 'Newsreader', Georgia, serif; font-size: 16px; line-height: 1.7; background: transparent; color: #1a1a1a; outline: none; transition: border-color 0.2s; resize: vertical; font-weight: 300; }
-        .writein-textarea:focus { border-color: #1a1a1a; }
-        .writein-textarea::placeholder { color: #c0bdb8; font-style: italic; }
-        .skip-btn { background: none; border: none; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 12px; color: #bbb; letter-spacing: 0.05em; transition: color 0.2s; padding: 8px 0; }
-        .skip-btn:hover { color: #888; }
-      `}</style>
+    <div style={{ minHeight: "100vh", paddingBottom: 40 }}>
+      <style>{W2K_STYLES}</style>
 
-      {/* Corner marks */}
-      <div style={{ position: "fixed", top: 24, left: 24, width: 20, height: 20, borderTop: "1.5px solid #d4d0ca", borderLeft: "1.5px solid #d4d0ca", zIndex: 10 }} />
-      <div style={{ position: "fixed", top: 24, right: 24, width: 20, height: 20, borderTop: "1.5px solid #d4d0ca", borderRight: "1.5px solid #d4d0ca", zIndex: 10 }} />
-      <div style={{ position: "fixed", bottom: 24, left: 24, width: 20, height: 20, borderBottom: "1.5px solid #d4d0ca", borderLeft: "1.5px solid #d4d0ca", zIndex: 10 }} />
-      <div style={{ position: "fixed", bottom: 24, right: 24, width: 20, height: 20, borderBottom: "1.5px solid #d4d0ca", borderRight: "1.5px solid #d4d0ca", zIndex: 10 }} />
-
-      <div style={{ maxWidth: 620, margin: "0 auto", padding: "60px 32px", minHeight: "100vh" }}>
-
-        {/* ═══════ INTRO ═══════ */}
-        {phase === "intro" && (
-          <div className={fadeIn ? "fade-active" : "fade-enter"} style={{ textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "80vh" }}>
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "#999", marginBottom: 32 }}>Assessment Tool</div>
-            <h1 style={{ fontSize: "clamp(32px, 5vw, 48px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 20, letterSpacing: "-0.01em" }}>
-              Do You Need a<br /><em style={{ fontWeight: 500 }}>Chief of Staff?</em>
-            </h1>
-            <p style={{ fontSize: 17, lineHeight: 1.7, color: "#666", maxWidth: 440, margin: "0 auto 20px", fontWeight: 300 }}>
-              A two-part assessment. First we'll figure out if you need one and how to engage them. Then we'll pinpoint exactly what kind.
-            </p>
-            <p style={{ fontSize: 14, lineHeight: 1.6, color: "#aaa", maxWidth: 380, margin: "0 auto 48px", fontFamily: "'DM Mono', monospace" }}>
-              Part 1 → Need + Engagement Model<br />Part 2 → Archetype + Hiring Blueprint
-            </p>
-            <button className="primary-btn" onClick={() => { setStep(0); setPhase("phase1"); }}>Begin Assessment</button>
-            <div style={{ marginTop: 32, fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#bbb" }}>Takes about 4 minutes</div>
-          </div>
-        )}
-
-        {/* ═══════ PHASE 1 QUESTIONS ═══════ */}
-        {phase === "phase1" && (
-          <div className={fadeIn ? "fade-active" : "fade-enter"} style={{ display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "80vh" }}>
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: "#999", marginBottom: 24 }}>Part 1 — Do You Need One?</div>
-            <div style={{ display: "flex", gap: 4, marginBottom: 48 }}>
-              {PHASE1_QUESTIONS.map((_, i) => <div key={i} className={`progress-segment ${i <= step ? "filled" : ""}`} />)}
-            </div>
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "#999", marginBottom: 12 }}>Question {step + 1} of {PHASE1_QUESTIONS.length}</div>
-            <h2 style={{ fontSize: "clamp(22px, 3.5vw, 30px)", fontWeight: 400, lineHeight: 1.3, marginBottom: 8 }}>{PHASE1_QUESTIONS[step].question}</h2>
-            <p style={{ fontSize: 14, color: "#888", marginBottom: 36, fontWeight: 300, fontStyle: "italic" }}>{PHASE1_QUESTIONS[step].subtext}</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {PHASE1_QUESTIONS[step].options.map((opt) => (
-                <button key={opt.label} className={`option-btn ${selected === opt.value ? "selected" : ""}`} onClick={() => handleP1Select(PHASE1_QUESTIONS[step].id, opt.value)}>
-                  <span style={{ opacity: 0.4, fontSize: 12, minWidth: 48 }}>{opt.icon}</span>{opt.label}
+      {/* ═══════ INTRO ═══════ */}
+      {phase === "intro" && (
+        <div style={{ maxWidth: 520, margin: "32px auto" }}>
+          <Win2KWindow title="Chief of Staff Assessment — Welcome" icon="📋">
+            <div className="win2k-content">
+              <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+                {/* Big icon area */}
+                <div style={{ width: 48, height: 48, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36 }}>
+                  📋
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 16, fontWeight: "bold", marginBottom: 4 }}>Do You Need a Chief of Staff?</div>
+                  <div style={{ fontSize: 11, color: "#444", lineHeight: 1.5, marginBottom: 12 }}>
+                    A two-part diagnostic assessment to determine whether you need a Chief of Staff, what engagement model fits, and which archetype to hire.
+                  </div>
+                  <div className="win2k-note" style={{ marginBottom: 12 }}>
+                    <span style={{ fontSize: 11, lineHeight: 1.5 }}>
+                      <strong>Part 1:</strong> Need Assessment + Engagement Model<br />
+                      <strong>Part 2:</strong> Archetype Identification + Hiring Blueprint<br />
+                      Estimated time: ~4 minutes
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <hr className="win2k-sep" />
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, paddingTop: 4 }}>
+                <button className="win2k-btn win2k-btn-default" onClick={() => { setStep(0); setPhase("phase1"); }}>
+                  Next &gt;
                 </button>
-              ))}
+                <button className="win2k-btn" onClick={restart}>Cancel</button>
+              </div>
             </div>
-            {step > 0 && <div style={{ marginTop: 32 }}><button className="back-btn" onClick={goBack}>← Back</button></div>}
-          </div>
-        )}
+          </Win2KWindow>
+        </div>
+      )}
 
-        {/* ═══════ PHASE 1 RESULT ═══════ */}
-        {phase === "phase1result" && p1Result && (
-          <div className={fadeIn ? "fade-active" : "fade-enter"}>
-            {p1Result.need === "none" ? (
-              <>
-                <div style={{ marginBottom: 24 }}><span className="result-tag" style={{ background: "#4a7c6f" }}>Part 1 Result</span></div>
-                <h2 style={{ fontSize: "clamp(28px, 4.5vw, 40px)", fontWeight: 400, lineHeight: 1.2, marginBottom: 8 }}>You Probably Don't Need One Yet</h2>
-                <p style={{ fontSize: 18, color: "#888", fontStyle: "italic", fontWeight: 300, marginBottom: 32 }}>But keep this bookmarked.</p>
-                <p style={{ fontSize: 16, lineHeight: 1.75, color: "#444", marginBottom: 40, fontWeight: 300 }}>
-                  Based on your answers, your current operating model can handle the complexity you're facing. A Chief of Staff makes sense when organizational friction significantly outpaces your ability to manage it yourself.
-                </p>
-                <div style={{ marginBottom: 40 }}>
-                  <div className="section-label">Why we think this</div>
-                  {["Your direct report count is manageable", "You still have strategic thinking time", "Cross-functional work is mostly on track", "You're not yet the primary bottleneck"].map((s, i) => (
-                    <div key={i} className="trait-item"><span style={{ color: "#4a7c6f", fontSize: 16 }}>→</span> {s}</div>
-                  ))}
-                </div>
-                <div style={{ padding: 20, background: "#f0ede8", borderRadius: 4, marginBottom: 40 }}>
-                  <div className="section-label" style={{ marginBottom: 8 }}>Consider instead</div>
-                  <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: "#555", lineHeight: 1.6 }}>
-                    A strong Executive Assistant or senior Program Manager might be a better fit right now. If things shift in 6 months, come back and retake this.
-                  </p>
-                </div>
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                  <button className="secondary-btn" onClick={restart}>Retake Assessment</button>
-                  <button className="primary-btn" onClick={startPhase2} style={{ fontSize: 12 }}>I still want to explore types →</button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div style={{ marginBottom: 24 }}><span className="result-tag" style={{ background: "#1a1a1a" }}>Part 1 Result</span></div>
-                <h2 style={{ fontSize: "clamp(28px, 4.5vw, 38px)", fontWeight: 400, lineHeight: 1.2, marginBottom: 8 }}>Yes, you need a Chief of Staff.</h2>
-                <p style={{ fontSize: 17, color: "#888", fontStyle: "italic", fontWeight: 300, marginBottom: 32, lineHeight: 1.5 }}>
-                  Your complexity score is {p1Result.totalScore}/28. That's well above the threshold.
-                </p>
-                <div className="model-card" style={{ borderColor: p1Result.model === "fractional" ? "#2c5f8a" : "#4a7c6f", background: p1Result.model === "fractional" ? "linear-gradient(135deg, #f7f9fb 0%, #faf8f5 100%)" : "linear-gradient(135deg, #f5faf7 0%, #faf8f5 100%)", marginBottom: 32 }}>
-                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: p1Result.model === "fractional" ? "#2c5f8a" : "#4a7c6f" }} />
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: p1Result.model === "fractional" ? "#2c5f8a" : "#4a7c6f", marginBottom: 12, fontWeight: 500 }}>Engagement Model</div>
-                  <h3 style={{ fontSize: 24, fontWeight: 400, marginBottom: 6 }}>{p1Result.modelTitle}</h3>
-                  <p style={{ fontSize: 15, color: "#666", fontWeight: 300, fontStyle: "italic", marginBottom: 20, lineHeight: 1.5 }}>{p1Result.modelSubtitle}</p>
-                  <div className="section-label" style={{ marginBottom: 10 }}>Why this model</div>
-                  {p1Result.signals.map((s, i) => <div key={i} className="signal-row"><span style={{ color: p1Result.model === "fractional" ? "#2c5f8a" : "#4a7c6f" }}>✓</span> {s}</div>)}
-                  {p1Result.counterSignals.length > 0 && (
-                    <>
-                      <div className="section-label" style={{ marginBottom: 10, marginTop: 20 }}>{p1Result.model === "fractional" ? "Signals that could shift to full-time" : "Signals that could work fractional"}</div>
-                      {p1Result.counterSignals.map((s, i) => <div key={i} className="signal-row" style={{ color: "#999" }}><span>○</span> {s}</div>)}
-                    </>
-                  )}
-                </div>
-                <div style={{ textAlign: "center", padding: "20px 0" }}>
-                  <p style={{ fontSize: 16, color: "#666", marginBottom: 24, fontWeight: 300, lineHeight: 1.6 }}>Now let's figure out exactly <em>what kind</em> of Chief of Staff you need.</p>
-                  <button className="primary-btn" onClick={startPhase2}>Continue to Part 2 →</button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* ═══════ PHASE 2 INTRO ═══════ */}
-        {phase === "phase2intro" && (
-          <div className={fadeIn ? "fade-active" : "fade-enter"} style={{ textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "80vh" }}>
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "#2c5f8a", marginBottom: 32 }}>Part 2</div>
-            <h2 style={{ fontSize: "clamp(28px, 4.5vw, 42px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 20 }}>What Kind of<br /><em style={{ fontWeight: 500 }}>Chief of Staff?</em></h2>
-            <p style={{ fontSize: 16, lineHeight: 1.7, color: "#666", maxWidth: 420, margin: "0 auto 48px", fontWeight: 300 }}>
-              Seven questions — five quick picks and two short write-ins — to identify your ideal archetype and build a detailed hiring blueprint.
-            </p>
-            <button className="primary-btn" onClick={beginPhase2}>Let's Go</button>
-          </div>
-        )}
-
-        {/* ═══════ PHASE 2 MC QUESTIONS ═══════ */}
-        {phase === "phase2mc" && (
-          <div className={fadeIn ? "fade-active" : "fade-enter"} style={{ display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "80vh" }}>
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: "#2c5f8a", marginBottom: 24 }}>Part 2 — What Kind?</div>
-            <div style={{ display: "flex", gap: 4, marginBottom: 48 }}>
-              {Array.from({ length: totalP2Steps }).map((_, i) => <div key={i} className={`progress-segment ${i <= currentP2Step ? "filled" : ""}`} />)}
-            </div>
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "#999", marginBottom: 12 }}>Question {currentP2Step + 1} of {totalP2Steps}</div>
-            <h2 style={{ fontSize: "clamp(22px, 3.5vw, 30px)", fontWeight: 400, lineHeight: 1.3, marginBottom: 8 }}>{PHASE2_MC_QUESTIONS[step].question}</h2>
-            <p style={{ fontSize: 14, color: "#888", marginBottom: 36, fontWeight: 300, fontStyle: "italic" }}>{PHASE2_MC_QUESTIONS[step].subtext}</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {PHASE2_MC_QUESTIONS[step].options.map((opt) => (
-                <button key={opt.label} className={`option-btn ${selected === opt.value ? "selected" : ""}`} onClick={() => handleP2MCSelect(PHASE2_MC_QUESTIONS[step].id, opt.value)}>
-                  <span style={{ opacity: 0.4, fontSize: 12, minWidth: 48 }}>{opt.icon}</span>{opt.label}
-                </button>
-              ))}
-              {PHASE2_MC_QUESTIONS[step].otherPrompt && (
-                <>
-                  <button className={`option-btn ${showOtherInput ? "other-active" : ""}`} onClick={handleOtherClick}>
-                    <span style={{ opacity: 0.4, fontSize: 12, minWidth: 48 }}>✎</span>{PHASE2_MC_QUESTIONS[step].otherPrompt}
-                  </button>
-                  {showOtherInput && (
-                    <div style={{ marginTop: 4 }}>
-                      <input className="other-input" type="text" placeholder="Tell us more…" value={otherValue} onChange={(e) => setOtherValue(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleOtherSubmit(PHASE2_MC_QUESTIONS[step].id); }} autoFocus maxLength={200} />
-                      <button className="other-submit" onClick={() => handleOtherSubmit(PHASE2_MC_QUESTIONS[step].id)} disabled={!otherValue.trim()}>Submit →</button>
+      {/* ═══════ PHASE 1 QUESTIONS ═══════ */}
+      {phase === "phase1" && (
+        <div style={{ maxWidth: 540, margin: "24px auto" }}>
+          <Win2KWindow title={`CoS Assessment — Part 1: Question ${step + 1} of ${PHASE1_QUESTIONS.length}`} icon="❓">
+            <div className="win2k-content">
+              <ProgressBar value={step + 1} max={PHASE1_QUESTIONS.length} />
+              <hr className="win2k-sep" />
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ fontWeight: "bold", fontSize: 12, marginBottom: 4 }}>{PHASE1_QUESTIONS[step].question}</div>
+                <div style={{ fontSize: 10, color: "#666", fontStyle: "italic", marginBottom: 8 }}>{PHASE1_QUESTIONS[step].subtext}</div>
+              </div>
+              <div className="win2k-groupbox" style={{ marginBottom: 8 }}>
+                <div className="win2k-groupbox-legend">Select one option:</div>
+                {PHASE1_QUESTIONS[step].options.map((opt) => (
+                  <button
+                    key={opt.label}
+                    className={`win2k-option ${selected === opt.value ? "selected" : ""}`}
+                    onClick={() => handleP1Select(PHASE1_QUESTIONS[step].id, opt.value)}
+                  >
+                    <div className={`win2k-option-radio ${selected === opt.value ? "" : ""}`}>
+                      {selected === opt.value && <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#fff" }} />}
                     </div>
+                    <span style={{ fontSize: 10, opacity: 0.6, minWidth: 32, fontFamily: "monospace" }}>{opt.icon}</span>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <hr className="win2k-sep" />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 4 }}>
+                <div className="win2k-statusbar-panel" style={{ fontSize: 10, color: "#666" }}>
+                  Part 1 of 2 — Complexity Assessment
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {step > 0 && (
+                    <button className="win2k-btn" onClick={goBack}>&lt; Back</button>
                   )}
+                </div>
+              </div>
+            </div>
+          </Win2KWindow>
+        </div>
+      )}
+
+      {/* ═══════ PHASE 1 RESULT ═══════ */}
+      {phase === "phase1result" && p1Result && (
+        <div style={{ maxWidth: 560, margin: "24px auto" }}>
+          <Win2KWindow
+            title={p1Result.need === "none" ? "Part 1 Result — No CoS Needed" : "Part 1 Result — Chief of Staff Needed"}
+            icon={p1Result.need === "none" ? "ℹ️" : "✅"}
+          >
+            <div className="win2k-content win2k-scrollable">
+              {p1Result.need === "none" ? (
+                <>
+                  <div style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 12 }}>
+                    <div style={{ fontSize: 32 }}>ℹ️</div>
+                    <div>
+                      <div style={{ fontWeight: "bold", fontSize: 14, marginBottom: 4 }}>You Probably Don&apos;t Need One Yet</div>
+                      <div style={{ fontSize: 11, color: "#555", fontStyle: "italic" }}>But keep this bookmarked.</div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 11, lineHeight: 1.6, color: "#222", marginBottom: 12 }}>
+                    Based on your answers, your current operating model can handle the complexity you&apos;re facing. A Chief of Staff makes sense when organizational friction significantly outpaces your ability to manage it yourself.
+                  </div>
+                  <div className="win2k-groupbox" style={{ marginBottom: 12 }}>
+                    <div className="win2k-groupbox-legend">Why we think this</div>
+                    {["Your direct report count is manageable", "You still have strategic thinking time", "Cross-functional work is mostly on track", "You're not yet the primary bottleneck"].map((s, i) => (
+                      <div key={i} className="win2k-list-item">{s}</div>
+                    ))}
+                  </div>
+                  <div className="win2k-note" style={{ marginBottom: 12 }}>
+                    <span style={{ fontSize: 11, lineHeight: 1.5 }}>
+                      <strong>Consider instead:</strong> A strong Executive Assistant or senior Program Manager might be a better fit right now. If things shift in 6 months, come back and retake this.
+                    </span>
+                  </div>
+                  <hr className="win2k-sep" />
+                  <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", paddingTop: 4 }}>
+                    <button className="win2k-btn win2k-btn-default" onClick={startPhase2} style={{ fontSize: 10 }}>Explore CoS Types</button>
+                    <button className="win2k-btn" onClick={restart}>Start Over</button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 12 }}>
+                    <div style={{ fontSize: 32 }}>✅</div>
+                    <div>
+                      <div style={{ fontWeight: "bold", fontSize: 14, marginBottom: 4 }}>Yes, you need a Chief of Staff.</div>
+                      <div style={{ fontSize: 11, color: "#555" }}>
+                        Complexity score: <strong>{p1Result.totalScore}/28</strong> — well above the threshold.
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="win2k-groupbox" style={{ marginBottom: 12 }}>
+                    <div className="win2k-groupbox-legend" style={{ color: p1Result.model === "fractional" ? "#000080" : "#006400" }}>
+                      Recommended Engagement Model: {p1Result.modelTitle}
+                    </div>
+                    <div style={{ marginTop: 8, fontSize: 11, marginBottom: 8, lineHeight: 1.5 }}>
+                      {p1Result.modelSubtitle}
+                    </div>
+                    <div style={{ marginBottom: 4, fontWeight: "bold", fontSize: 10, textTransform: "uppercase", color: "#666" }}>Supporting signals:</div>
+                    {p1Result.signals.map((s, i) => (
+                      <div key={i} className="win2k-list-item">{s}</div>
+                    ))}
+                    {p1Result.counterSignals.length > 0 && (
+                      <>
+                        <div style={{ marginTop: 8, marginBottom: 4, fontWeight: "bold", fontSize: 10, textTransform: "uppercase", color: "#999" }}>
+                          {p1Result.model === "fractional" ? "Counter-signals (could shift to full-time):" : "Counter-signals (could work fractional):"}
+                        </div>
+                        {p1Result.counterSignals.map((s, i) => (
+                          <div key={i} className="win2k-list-item" style={{ color: "#888" }}>{s}</div>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                  <div className="win2k-note" style={{ marginBottom: 12 }}>
+                    <span style={{ fontSize: 11 }}>
+                      Now let&apos;s figure out exactly <strong>what kind</strong> of Chief of Staff you need.
+                    </span>
+                  </div>
+                  <hr className="win2k-sep" />
+                  <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", paddingTop: 4 }}>
+                    <button className="win2k-btn win2k-btn-default" onClick={startPhase2}>Continue to Part 2 &gt;</button>
+                    <button className="win2k-btn" onClick={restart}>Start Over</button>
+                  </div>
                 </>
               )}
             </div>
-            {step > 0 && <div style={{ marginTop: 32 }}><button className="back-btn" onClick={goBack}>← Back</button></div>}
-          </div>
-        )}
+          </Win2KWindow>
+        </div>
+      )}
 
-        {/* ═══════ PHASE 2 WRITE-IN QUESTIONS ═══════ */}
-        {phase === "phase2writein" && currentWriteIn && (
-          <div className={fadeIn ? "fade-active" : "fade-enter"} style={{ display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "80vh" }}>
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: "#2c5f8a", marginBottom: 24 }}>Part 2 — Your Priorities</div>
-            <div style={{ display: "flex", gap: 4, marginBottom: 48 }}>
-              {Array.from({ length: totalP2Steps }).map((_, i) => <div key={i} className={`progress-segment ${i <= currentP2Step ? "filled" : ""}`} />)}
-            </div>
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "#999", marginBottom: 12 }}>Question {currentP2Step + 1} of {totalP2Steps}</div>
-            <h2 style={{ fontSize: "clamp(22px, 3.5vw, 28px)", fontWeight: 400, lineHeight: 1.3, marginBottom: 8 }}>{currentWriteIn.question}</h2>
-            <p style={{ fontSize: 14, color: "#888", marginBottom: 28, fontWeight: 300, fontStyle: "italic" }}>{currentWriteIn.subtext}</p>
-            <textarea
-              className="writein-textarea"
-              placeholder={currentWriteIn.placeholder}
-              value={writeInValue}
-              onChange={(e) => setWriteInValue(e.target.value)}
-              maxLength={500}
-            />
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16 }}>
-              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                {step > 0 && <button className="back-btn" onClick={goBack}>← Back</button>}
-                <button className="skip-btn" onClick={handleWriteInSkip}>Skip this question →</button>
-              </div>
-              <button className="primary-btn" style={{ padding: "12px 32px", fontSize: 12 }} onClick={handleWriteInNext} disabled={!writeInValue.trim()}>
-                {step + 1 < PHASE2_WRITEIN_QUESTIONS.length ? "Next →" : "See Results →"}
-              </button>
-            </div>
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#ccc", marginTop: 12, textAlign: "right" }}>
-              {writeInValue.length}/500
-            </div>
-          </div>
-        )}
-
-        {/* ═══════ FINAL RESULT ═══════ */}
-        {phase === "final" && finalType && (
-          <div className={fadeIn ? "fade-active" : "fade-enter"}>
-            <div style={{ marginBottom: 8 }}><span className="result-tag" style={{ background: finalType.color }}>{finalType.icon} Your Archetype</span></div>
-            <h2 style={{ fontSize: "clamp(28px, 4.5vw, 42px)", fontWeight: 400, lineHeight: 1.2, marginBottom: 8 }}>{finalType.title}</h2>
-            <p style={{ fontSize: 19, color: "#888", fontStyle: "italic", fontWeight: 300, marginBottom: 32 }}>{finalType.tagline}</p>
-            <p style={{ fontSize: 16, lineHeight: 1.75, color: "#444", marginBottom: 40, fontWeight: 300 }}>{finalType.description}</p>
-
-            <div style={{ marginBottom: 40 }}>
-              <div className="section-label">What this person does</div>
-              {finalType.whatTheyDo.map((item, i) => <div key={i} className="trait-item"><span style={{ color: finalType.color, fontSize: 14 }}>◆</span> {item}</div>)}
-            </div>
-
-            <div style={{ marginBottom: 40 }}>
-              <div className="section-label">What to look for</div>
-              {finalType.whatToLookFor.map((item, i) => <div key={i} className="trait-item"><span style={{ color: finalType.color, fontSize: 16 }}>→</span> {item}</div>)}
-            </div>
-
-            <div style={{ marginBottom: 40 }}>
-              <div className="section-label">Interview questions to ask</div>
-              {finalType.interviewQs.map((q, i) => <div key={i} className="interview-q" style={{ borderLeftColor: finalType.color }}>{q}</div>)}
-            </div>
-
-            <div style={{ marginBottom: 40 }}>
-              <div className="section-label">Typical compensation range</div>
-              <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-                <div style={{ flex: 1, minWidth: 200, padding: 20, background: "#f7f5f2", borderRadius: 4 }}>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#999", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Full-Time</div>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 20, fontWeight: 500 }}>{finalType.compRange.ft}</div>
-                </div>
-                <div style={{ flex: 1, minWidth: 200, padding: 20, background: "#f7f5f2", borderRadius: 4 }}>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#999", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Fractional</div>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 20, fontWeight: 500 }}>{finalType.compRange.frac}</div>
+      {/* ═══════ PHASE 2 INTRO ═══════ */}
+      {phase === "phase2intro" && (
+        <div style={{ maxWidth: 480, margin: "24px auto" }}>
+          <Win2KWindow title="CoS Assessment — Part 2: Archetype Finder" icon="🔍">
+            <div className="win2k-content">
+              <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+                <div style={{ fontSize: 36, flexShrink: 0 }}>🔍</div>
+                <div>
+                  <div style={{ fontWeight: "bold", fontSize: 13, marginBottom: 6 }}>What Kind of Chief of Staff?</div>
+                  <div style={{ fontSize: 11, lineHeight: 1.6, color: "#333", marginBottom: 10 }}>
+                    Seven questions — five quick picks and two short write-ins — to identify your ideal archetype and build a detailed hiring blueprint.
+                  </div>
+                  <div className="win2k-note">
+                    <span style={{ fontSize: 11 }}>This section takes approximately 2 minutes to complete.</span>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            {secondaryType && (
-              <div style={{ padding: 20, background: secondaryType.accent, borderRadius: 4, borderLeft: `3px solid ${secondaryType.color}`, marginBottom: 40 }}>
-                <div className="section-label" style={{ color: secondaryType.color, marginBottom: 8 }}>Secondary signal: {secondaryType.title}</div>
-                <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: "#555", lineHeight: 1.6 }}>
-                  Your answers also showed strong signals for a {secondaryType.title.toLowerCase()}. The ideal candidate might blend both — someone who leads with {p2Result.primary} skills but can flex into {p2Result.secondary} work when needed.
-                </p>
+              <hr className="win2k-sep" />
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", paddingTop: 4 }}>
+                <button className="win2k-btn win2k-btn-default" onClick={beginPhase2}>Start Part 2 &gt;</button>
+                <button className="win2k-btn" onClick={restart}>Cancel</button>
               </div>
-            )}
+            </div>
+          </Win2KWindow>
+        </div>
+      )}
 
-            {p1Result?.need === "yes" && <div className="divider">{p1Result.modelTitle}</div>}
+      {/* ═══════ PHASE 2 MC QUESTIONS ═══════ */}
+      {phase === "phase2mc" && (
+        <div style={{ maxWidth: 540, margin: "24px auto" }}>
+          <Win2KWindow title={`Part 2 — Question ${currentP2Step + 1} of ${totalP2Steps}`} icon="❓">
+            <div className="win2k-content">
+              <ProgressBar value={currentP2Step + 1} max={totalP2Steps} />
+              <hr className="win2k-sep" />
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ fontWeight: "bold", fontSize: 12, marginBottom: 4 }}>{PHASE2_MC_QUESTIONS[step].question}</div>
+                <div style={{ fontSize: 10, color: "#666", fontStyle: "italic", marginBottom: 8 }}>{PHASE2_MC_QUESTIONS[step].subtext}</div>
+              </div>
+              <div className="win2k-groupbox" style={{ marginBottom: 8 }}>
+                <div className="win2k-groupbox-legend">Select one option:</div>
+                {PHASE2_MC_QUESTIONS[step].options.map((opt) => (
+                  <button
+                    key={opt.label}
+                    className={`win2k-option ${selected === opt.value ? "selected" : ""}`}
+                    onClick={() => handleP2MCSelect(PHASE2_MC_QUESTIONS[step].id, opt.value)}
+                  >
+                    <div className="win2k-option-radio">
+                      {selected === opt.value && <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#fff" }} />}
+                    </div>
+                    <span style={{ fontSize: 14, minWidth: 24 }}>{opt.icon}</span>
+                    {opt.label}
+                  </button>
+                ))}
+                {PHASE2_MC_QUESTIONS[step].otherPrompt && (
+                  <>
+                    <button
+                      className={`win2k-option ${showOtherInput ? "selected" : ""}`}
+                      onClick={handleOtherClick}
+                    >
+                      <div className="win2k-option-radio" />
+                      <span style={{ fontSize: 11, minWidth: 24 }}>✎</span>
+                      {PHASE2_MC_QUESTIONS[step].otherPrompt}
+                    </button>
+                    {showOtherInput && (
+                      <div style={{ padding: "6px 8px", background: "#f0ede8" }}>
+                        <input
+                          className="win2k-input"
+                          type="text"
+                          placeholder="Type your answer..."
+                          value={otherValue}
+                          onChange={(e) => setOtherValue(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") handleOtherSubmit(PHASE2_MC_QUESTIONS[step].id); }}
+                          autoFocus
+                          maxLength={200}
+                        />
+                        <div style={{ marginTop: 4, display: "flex", justifyContent: "flex-end" }}>
+                          <button
+                            className="win2k-btn win2k-btn-default"
+                            onClick={() => handleOtherSubmit(PHASE2_MC_QUESTIONS[step].id)}
+                            disabled={!otherValue.trim()}
+                            style={{ fontSize: 10 }}
+                          >
+                            Submit →
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+              <hr className="win2k-sep" />
+              <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 4 }}>
+                <div className="win2k-statusbar-panel" style={{ fontSize: 10, color: "#666" }}>Part 2 of 2</div>
+                {step > 0 && <button className="win2k-btn" onClick={goBack}>&lt; Back</button>}
+              </div>
+            </div>
+          </Win2KWindow>
+        </div>
+      )}
 
-            {/* ── LEAD CAPTURE ── */}
-            <div className="divider">Stay Connected</div>
-            {!leadSubmitted ? (
-              <div style={{ border: "1.5px solid #d4d0ca", borderRadius: 6, padding: 32, marginBottom: 40, background: "linear-gradient(135deg, #fdfcfa 0%, #f7f5f2 100%)" }}>
-                <h3 style={{ fontSize: 20, fontWeight: 400, marginBottom: 8 }}>
-                  Want help finding your {finalType.title.split(" ").slice(0, -1).join(" ").toLowerCase()} CoS?
-                </h3>
-                <p style={{ fontSize: 14, color: "#888", fontWeight: 300, lineHeight: 1.6, marginBottom: 24 }}>
-                  Leave your info and I'll send you a tailored job description template and — if you're going fractional — connect you with vetted candidates who match your profile.
-                </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
-                  <input className="lead-input" type="text" placeholder="Your name" value={leadName} onChange={(e) => setLeadName(e.target.value)} />
-                  <input className="lead-input" type="email" placeholder="Email address *" value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)} />
-                  <input className="lead-input" type="tel" placeholder="Phone (optional)" value={leadPhone} onChange={(e) => setLeadPhone(e.target.value)} />
+      {/* ═══════ PHASE 2 WRITE-IN QUESTIONS ═══════ */}
+      {phase === "phase2writein" && currentWriteIn && (
+        <div style={{ maxWidth: 540, margin: "24px auto" }}>
+          <Win2KWindow title={`Part 2 — Write-In ${step + 1} of ${PHASE2_WRITEIN_QUESTIONS.length}`} icon="✏️">
+            <div className="win2k-content">
+              <ProgressBar value={currentP2Step + 1} max={totalP2Steps} />
+              <hr className="win2k-sep" />
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ fontWeight: "bold", fontSize: 12, marginBottom: 4 }}>{currentWriteIn.question}</div>
+                <div style={{ fontSize: 10, color: "#666", fontStyle: "italic", marginBottom: 8 }}>{currentWriteIn.subtext}</div>
+              </div>
+              <textarea
+                className="win2k-textarea"
+                placeholder={currentWriteIn.placeholder}
+                value={writeInValue}
+                onChange={(e) => setWriteInValue(e.target.value)}
+                maxLength={500}
+                rows={5}
+              />
+              <div style={{ fontSize: 10, color: "#888", textAlign: "right", marginTop: 2 }}>{writeInValue.length}/500 characters</div>
+              <hr className="win2k-sep" />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 4 }}>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {step > 0 && <button className="win2k-btn" onClick={goBack}>&lt; Back</button>}
+                  <button className="win2k-btn" onClick={handleWriteInSkip} style={{ fontSize: 10 }}>Skip</button>
                 </div>
-                <button className="primary-btn" style={{ width: "100%" }} onClick={handleLeadSubmit} disabled={!leadEmail.trim() || leadSubmitting}>
-                  {leadSubmitting ? "Sending…" : "Get My Blueprint →"}
+                <button
+                  className="win2k-btn win2k-btn-default"
+                  onClick={handleWriteInNext}
+                  disabled={!writeInValue.trim()}
+                >
+                  {step + 1 < PHASE2_WRITEIN_QUESTIONS.length ? "Next >" : "See Results >"}
                 </button>
-                <p style={{ fontSize: 11, color: "#bbb", fontFamily: "'DM Mono', monospace", marginTop: 12, textAlign: "center" }}>
-                  No spam. Just your results and a personalized follow-up.
-                </p>
               </div>
-            ) : (
-              <div className="success-card" style={{ marginBottom: 40 }}>
-                <div style={{ fontSize: 28, marginBottom: 12 }}>✓</div>
-                <h3 style={{ fontSize: 20, fontWeight: 400, marginBottom: 8 }}>You're in.</h3>
-                <p style={{ fontSize: 14, color: "#666", fontWeight: 300, lineHeight: 1.6, fontFamily: "'DM Mono', monospace" }}>
-                  I'll send your tailored {finalType.title.toLowerCase()} blueprint to <strong>{leadEmail}</strong> shortly.
-                  {p1Result?.model === "fractional" && " I'll also reach out about fractional matches."}
-                </p>
-              </div>
-            )}
-
-            <div style={{ borderTop: "1px solid #eae7e2", paddingTop: 32, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-              <button className="secondary-btn" onClick={restart}>Start Over</button>
-              <button className="secondary-btn" onClick={() => { setStep(0); setP2Answers({}); setOtherTexts({}); setWriteInAnswers({}); setP2Result(null); setWriteInValue(""); setPhase("phase2intro"); }}>Retake Part 2</button>
             </div>
-          </div>
-        )}
-      </div>
+          </Win2KWindow>
+        </div>
+      )}
 
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, textAlign: "center", padding: "12px 0", fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.1em", color: "#ccc", background: "linear-gradient(transparent, #faf8f5)", pointerEvents: "none", zIndex: 5 }}>
-        CHIEF OF STAFF ASSESSMENT
+      {/* ═══════ FINAL RESULT ═══════ */}
+      {phase === "final" && finalType && (
+        <div style={{ maxWidth: 600, margin: "24px auto", display: "flex", flexDirection: "column", gap: 12 }}>
+
+          {/* Main result window */}
+          <Win2KWindow title={`Assessment Complete — Your CoS Archetype`} icon={finalType.icon}>
+            <div className="win2k-content win2k-scrollable" style={{ maxHeight: "none" }}>
+
+              {/* Header */}
+              <div style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 12 }}>
+                <div style={{ fontSize: 40, flexShrink: 0 }}>{finalType.icon}</div>
+                <div>
+                  <div style={{
+                    background: finalType.color,
+                    color: "#fff",
+                    fontSize: 10,
+                    fontWeight: "bold",
+                    padding: "1px 6px",
+                    display: "inline-block",
+                    marginBottom: 4,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em"
+                  }}>
+                    Your Archetype
+                  </div>
+                  <div style={{ fontWeight: "bold", fontSize: 16 }}>{finalType.title}</div>
+                  <div style={{ fontSize: 11, color: "#555", fontStyle: "italic" }}>{finalType.tagline}</div>
+                </div>
+              </div>
+
+              <div style={{ fontSize: 11, lineHeight: 1.7, color: "#222", marginBottom: 12 }}>
+                {finalType.description}
+              </div>
+
+              {/* What they do */}
+              <div className="win2k-groupbox" style={{ marginBottom: 10 }}>
+                <div className="win2k-groupbox-legend" style={{ color: finalType.color }}>What this person does</div>
+                {finalType.whatTheyDo.map((item, i) => (
+                  <div key={i} className="win2k-list-item">{item}</div>
+                ))}
+              </div>
+
+              {/* What to look for */}
+              <div className="win2k-groupbox" style={{ marginBottom: 10 }}>
+                <div className="win2k-groupbox-legend" style={{ color: finalType.color }}>What to look for</div>
+                {finalType.whatToLookFor.map((item, i) => (
+                  <div key={i} className="win2k-list-item">{item}</div>
+                ))}
+              </div>
+
+              {/* Interview Qs */}
+              <div className="win2k-groupbox" style={{ marginBottom: 10 }}>
+                <div className="win2k-groupbox-legend" style={{ color: finalType.color }}>Interview questions to ask</div>
+                {finalType.interviewQs.map((q, i) => (
+                  <div key={i} style={{ padding: "6px 8px", borderLeft: `3px solid ${finalType.color}`, background: "#f7f5f0", marginBottom: 4, fontSize: 11, lineHeight: 1.5, fontStyle: "italic" }}>
+                    {q}
+                  </div>
+                ))}
+              </div>
+
+              {/* Compensation */}
+              <div className="win2k-groupbox" style={{ marginBottom: 10 }}>
+                <div className="win2k-groupbox-legend" style={{ color: finalType.color }}>Typical compensation range</div>
+                <table className="win2k-table" style={{ marginTop: 8 }}>
+                  <thead>
+                    <tr>
+                      <th style={{ background: finalType.color }}>Engagement Type</th>
+                      <th style={{ background: finalType.color }}>Compensation Range</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Full-Time</td>
+                      <td><strong>{finalType.compRange.ft}</strong></td>
+                    </tr>
+                    <tr>
+                      <td>Fractional</td>
+                      <td><strong>{finalType.compRange.frac}</strong></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Secondary signal */}
+              {secondaryType && (
+                <div className="win2k-note" style={{ marginBottom: 10, borderColor: secondaryType.color }}>
+                  <span style={{ fontSize: 11, lineHeight: 1.5 }}>
+                    <strong>Secondary signal: {secondaryType.title}</strong><br />
+                    Your answers also showed strong signals for a {secondaryType.title.toLowerCase()}. The ideal candidate might blend both — leading with {p2Result.primary} skills but able to flex into {p2Result.secondary} work.
+                  </span>
+                </div>
+              )}
+
+              {p1Result?.need === "yes" && (
+                <div style={{ textAlign: "center", padding: "8px", background: "#d4d0c8", border: "1px solid #808080", marginBottom: 10, fontSize: 11, fontWeight: "bold" }}>
+                  ── {p1Result.modelTitle} ──
+                </div>
+              )}
+
+              <hr className="win2k-sep" />
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", paddingTop: 4 }}>
+                <button className="win2k-btn" onClick={restart}>Start Over</button>
+                <button className="win2k-btn" onClick={() => { setStep(0); setP2Answers({}); setOtherTexts({}); setWriteInAnswers({}); setP2Result(null); setWriteInValue(""); setPhase("phase2intro"); }}>
+                  Retake Part 2
+                </button>
+              </div>
+            </div>
+          </Win2KWindow>
+
+          {/* Lead Capture Window */}
+          <Win2KWindow title="Stay Connected — Get Your Blueprint" icon="📧">
+            <div className="win2k-content">
+              {!leadSubmitted ? (
+                <>
+                  <div style={{ fontSize: 11, lineHeight: 1.6, color: "#333", marginBottom: 10 }}>
+                    <strong>Want help finding your {finalType.title.split(" ").slice(0, -1).join(" ").toLowerCase()} CoS?</strong>
+                    <br />
+                    Leave your info and I&apos;ll send you a tailored job description template and — if you&apos;re going fractional — connect you with vetted candidates who match your profile.
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <label style={{ width: 80, fontSize: 11, textAlign: "right", flexShrink: 0 }}>Name:</label>
+                      <input className="win2k-input" style={{ flex: 1 }} type="text" placeholder="Your name" value={leadName} onChange={(e) => setLeadName(e.target.value)} />
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <label style={{ width: 80, fontSize: 11, textAlign: "right", flexShrink: 0 }}>Email <span style={{ color: "red" }}>*</span>:</label>
+                      <input className="win2k-input" style={{ flex: 1 }} type="email" placeholder="your@email.com" value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)} />
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <label style={{ width: 80, fontSize: 11, textAlign: "right", flexShrink: 0 }}>Phone:</label>
+                      <input className="win2k-input" style={{ flex: 1 }} type="tel" placeholder="Optional" value={leadPhone} onChange={(e) => setLeadPhone(e.target.value)} />
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 10, color: "#888", marginBottom: 8 }}>* Required field. No spam — just your results and a personalized follow-up.</div>
+                  <hr className="win2k-sep" />
+                  <div style={{ display: "flex", justifyContent: "flex-end", paddingTop: 4 }}>
+                    <button
+                      className="win2k-btn win2k-btn-default"
+                      onClick={handleLeadSubmit}
+                      disabled={!leadEmail.trim() || leadSubmitting}
+                    >
+                      {leadSubmitting ? "Sending…" : "Get My Blueprint →"}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div style={{ textAlign: "center", padding: "16px 8px" }}>
+                  <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
+                  <div style={{ fontWeight: "bold", fontSize: 13, marginBottom: 4 }}>You&apos;re in the system.</div>
+                  <div style={{ fontSize: 11, color: "#555", lineHeight: 1.6 }}>
+                    I&apos;ll send your tailored {finalType.title.toLowerCase()} blueprint to{" "}
+                    <strong>{leadEmail}</strong> shortly.
+                    {p1Result?.model === "fractional" && " I'll also reach out about fractional matches."}
+                  </div>
+                </div>
+              )}
+            </div>
+          </Win2KWindow>
+        </div>
+      )}
+
+      {/* ═══════ TASKBAR ═══════ */}
+      <div className="win2k-taskbar">
+        <div className="win2k-start-btn">
+          <span style={{ fontSize: 14 }}>🪟</span>
+          <span>Start</span>
+        </div>
+        <div style={{ width: 1, height: 20, background: "#808080", margin: "0 2px" }} />
+        <div className="win2k-taskbar-task">
+          <span style={{ fontSize: 12 }}>📋</span>
+          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {phase === "intro" && "Chief of Staff Assessment"}
+            {phase === "phase1" && `Part 1 — Q${step + 1}`}
+            {phase === "phase1result" && "Part 1 Result"}
+            {phase === "phase2intro" && "Part 2 — Intro"}
+            {phase === "phase2mc" && `Part 2 — Q${step + 1}`}
+            {phase === "phase2writein" && `Part 2 — Write-In ${step + 1}`}
+            {phase === "final" && "Results — Your Blueprint"}
+          </span>
+        </div>
+        <Win2KClock />
       </div>
     </div>
   );
