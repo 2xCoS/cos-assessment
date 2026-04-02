@@ -202,7 +202,7 @@ h1{font-size:32px;font-weight:400;margin-bottom:4px}h2{font-size:18px;font-weigh
 <p style="font-size:17px;color:#888;font-style:italic;font-weight:300">${finalType.tagline}</p>
 <p style="margin-top:16px;font-size:15px;color:#444;font-weight:300">${finalType.description}</p>
 <div style="padding:14px;background:#f7f5f2;border-radius:4px;border-left:3px solid ${finalType.color};margin:20px 0"><p style="font-family:'DM Mono',monospace;font-size:14px;color:#444;margin:0"><strong>Our recommendation: You need a ${p1Result.model === "fractional" ? "fractional" : "full-time"} ${finalType.title}.</strong>${p1Result.model === "fractional" ? " That means the right person 2\u20133 days a week \u2014 not a full-time hire." : " This person should be fully embedded in your team."}</p></div>
-<div class="stat-row"><div class="stat"><div class="stat-num">${p1Result.totalScore}/28</div><div class="stat-label">Complexity Score</div></div><div class="stat"><div class="stat-num">${p1Result.modelTitle}</div><div class="stat-label">Engagement Model</div></div></div>
+<div class="stat-row"><div class="stat"><div class="stat-num">${p1Result.totalScore}/28</div><div class="stat-label">Complexity Score</div></div><div class="stat"><div class="stat-num">${p1Result.modelTitle}</div><div class="stat-label">Type of Engagement</div></div></div>
 <h2>What this person does</h2>${finalType.whatTheyDo.map(i => '<div class="item">\u25C6 ' + i + '</div>').join("")}
 <h2>What to look for</h2>${finalType.whatToLookFor.map(i => '<div class="item">\u2192 ' + i + '</div>').join("")}
 <h2>Interview questions</h2>${finalType.interviewQs.map(i => '<div class="item" style="font-style:italic">' + i + '</div>').join("")}
@@ -290,20 +290,22 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
         {/* ═══ INTRO ═══ */}
         {phase === "intro" && (
           <div className={fadeIn ? "fade-active" : "fade-enter"} style={{ textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "75vh" }}>
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "#999", marginBottom: 32 }}>Assessment Tool</div>
-            <h1 style={{ fontSize: "clamp(32px, 5vw, 48px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 28, letterSpacing: "-0.01em" }}>
+            <h1 style={{ fontSize: "clamp(32px, 5vw, 48px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 20, letterSpacing: "-0.01em" }}>
               Do You Need a<br /><em style={{ fontWeight: 500 }}>Chief of Staff?</em>
             </h1>
+            <p style={{ fontSize: 20, lineHeight: 1.7, color: "#444", maxWidth: 460, margin: "0 auto 28px", fontWeight: 500 }}>
+              Chances are you're <span style={{ textDecoration: "underline", textDecorationColor: "#2c5f8a", textUnderlineOffset: "4px", textDecorationThickness: "2px" }}>underwater</span> with work and curious if a Chief of Staff can help. By taking this assessment, we'll get you <span style={{ textDecoration: "underline", textDecorationColor: "#d4872c", textUnderlineOffset: "4px", textDecorationThickness: "2px" }}>clarity fast</span>.
+            </p>
             <p style={{ fontSize: 17, lineHeight: 1.8, color: "#555", maxWidth: 460, margin: "0 auto 0", fontWeight: 400 }}>
               A two-part assessment:
             </p>
-            <div style={{ textAlign: "left", maxWidth: 420, margin: "12px auto 0", fontSize: 16, lineHeight: 1.8, color: "#888", fontWeight: 300 }}>
-              <p style={{ marginBottom: 4 }}>1. Determine first if you need one, and only then</p>
-              <p>2. Focus on the right kind of CoS.</p>
+            <div style={{ textAlign: "center", maxWidth: 520, margin: "12px auto 0", fontSize: 16, lineHeight: 1.8, color: "#888", fontWeight: 300 }}>
+              <p style={{ marginBottom: 4, whiteSpace: "nowrap" }}>First, determine if you need a CoS and the right engagement type.</p>
+              <p>Then, narrow in on the right profile and archetype.</p>
             </div>
             <div style={{ height: 48 }} />
             <button className="primary-btn" onClick={() => { setStep(0); setPhase("phase1"); }}>Begin Assessment</button>
-            <div style={{ marginTop: 24, fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#bbb" }}>Takes about 4 minutes</div>
+            <div style={{ marginTop: 24, fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#bbb" }}>~4 minutes</div>
 
             <div style={{ marginTop: 48, paddingTop: 32, borderTop: "1px solid #e4e0da", maxWidth: 440, margin: "48px auto 0" }}>
               <p style={{ fontSize: 14, lineHeight: 1.7, color: "#888", fontWeight: 300 }}>
@@ -462,7 +464,7 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
                 })()}
                 <div className="model-card" style={{ borderColor: p1Result.model === "fractional" ? "#2c5f8a" : "#4a7c6f", background: p1Result.model === "fractional" ? "linear-gradient(135deg, #f7f9fb 0%, #faf8f5 100%)" : "linear-gradient(135deg, #f5faf7 0%, #faf8f5 100%)", marginBottom: 32 }}>
                   <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: p1Result.model === "fractional" ? "#2c5f8a" : "#4a7c6f" }} />
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: p1Result.model === "fractional" ? "#2c5f8a" : "#4a7c6f", marginBottom: 12, fontWeight: 500 }}>Engagement Model</div>
+                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: p1Result.model === "fractional" ? "#2c5f8a" : "#4a7c6f", marginBottom: 12, fontWeight: 500 }}>Type of Engagement</div>
                   <h3 style={{ fontSize: 24, fontWeight: 400, marginBottom: 6 }}>{p1Result.modelTitle}</h3>
                   <p style={{ fontSize: 15, color: "#666", fontWeight: 300, fontStyle: "italic", marginBottom: 20, lineHeight: 1.5 }}>{p1Result.modelSubtitle}</p>
                   <div className="section-label" style={{ marginBottom: 10 }}>Why this model</div>
@@ -609,13 +611,13 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
               </button>
             </div>
 
-            {p1Result?.need === "yes" && <div className="divider">{p1Result.modelTitle}</div>}
+            
 
             <div className="divider">Stay Connected</div>
             {!leadSubmitted ? (
               <div style={{ border: "1.5px solid #d4d0ca", borderRadius: 6, padding: 32, marginBottom: 40, background: "linear-gradient(135deg, #fdfcfa 0%, #f7f5f2 100%)" }}>
                 <h3 style={{ fontSize: 20, fontWeight: 400, marginBottom: 8 }}>Want help finding your {finalType.title.split(" ").slice(0, -1).join(" ").toLowerCase()} CoS?</h3>
-                <p style={{ fontSize: 14, color: "#888", fontWeight: 300, lineHeight: 1.6, marginBottom: 24 }}>Leave your info and I'll send you a tailored job description template and &mdash; if you're going fractional &mdash; connect you with vetted candidates who match your profile.</p>
+                <p style={{ fontSize: 14, color: "#888", fontWeight: 300, lineHeight: 1.6, marginBottom: 24 }}>Leave your info and we'll send you a tailored job description template and &mdash; if you're going fractional &mdash; connect you with vetted candidates who match your profile.</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
                   <input className="lead-input" type="text" placeholder="Your name" value={leadName} onChange={(e) => setLeadName(e.target.value)} />
                   <input className="lead-input" type="email" placeholder="Email address *" value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)} />
@@ -631,8 +633,8 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
                 <div style={{ fontSize: 28, marginBottom: 12 }}>{"\u2713"}</div>
                 <h3 style={{ fontSize: 20, fontWeight: 400, marginBottom: 8 }}>You're in.</h3>
                 <p style={{ fontSize: 14, color: "#666", fontWeight: 300, lineHeight: 1.6, fontFamily: "'DM Mono', monospace" }}>
-                  I'll send your tailored {finalType.title.toLowerCase()} blueprint to <strong>{leadEmail}</strong> shortly.
-                  {p1Result?.model === "fractional" && " I'll also reach out about fractional matches."}
+                  We'll send your tailored {finalType.title.toLowerCase()} blueprint to <strong>{leadEmail}</strong> shortly.
+                  {p1Result?.model === "fractional" && " We'll also reach out about fractional matches."}
                 </p>
               </div>
             )}

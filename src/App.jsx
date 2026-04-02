@@ -88,7 +88,7 @@ function getPhase1Result(answers) {
   const isFrac = f.length > ft.length, isDef = Math.abs(f.length - ft.length) >= 2;
   return { need: "yes", totalScore, model: isFrac ? "fractional" : "fulltime", strength: isDef ? "strong" : "lean",
     modelTitle: isFrac ? (isDef ? "Fractional Chief of Staff" : "Likely Fractional") : (isDef ? "Full-Time Chief of Staff" : "Likely Full-Time"),
-    modelSubtitle: isFrac ? (isDef ? "You don't need someone five days a week \u2014 you need the right person two or three." : "The signals lean fractional, though full-time could work too.") : (isDef ? "You need someone fully embedded in your operating rhythm." : "The signals lean full-time, though you could start fractional and convert."),
+    modelSubtitle: isFrac ? (isDef ? "You don't need someone five days a week \u2014 you need the right person two or three days a week." : "The signals lean fractional, though full-time could work too.") : (isDef ? "You need someone fully embedded in your operating rhythm." : "The signals lean full-time, though you could start fractional and convert."),
     signals: isFrac ? f : ft, counterSignals: isFrac ? ft : f,
   };
 }
@@ -201,7 +201,8 @@ h1{font-size:32px;font-weight:400;margin-bottom:4px}h2{font-size:18px;font-weigh
 <h1>${finalType.title}</h1>
 <p style="font-size:17px;color:#888;font-style:italic;font-weight:300">${finalType.tagline}</p>
 <p style="margin-top:16px;font-size:15px;color:#444;font-weight:300">${finalType.description}</p>
-<div class="stat-row"><div class="stat"><div class="stat-num">${p1Result.totalScore}/28</div><div class="stat-label">Complexity Score</div></div><div class="stat"><div class="stat-num">${p1Result.modelTitle}</div><div class="stat-label">Engagement Model</div></div></div>
+<div style="padding:14px;background:#f7f5f2;border-radius:4px;border-left:3px solid ${finalType.color};margin:20px 0"><p style="font-family:'DM Mono',monospace;font-size:14px;color:#444;margin:0"><strong>Our recommendation: You need a ${p1Result.model === "fractional" ? "fractional" : "full-time"} ${finalType.title}.</strong>${p1Result.model === "fractional" ? " That means the right person 2\u20133 days a week \u2014 not a full-time hire." : " This person should be fully embedded in your team."}</p></div>
+<div class="stat-row"><div class="stat"><div class="stat-num">${p1Result.totalScore}/28</div><div class="stat-label">Complexity Score</div></div><div class="stat"><div class="stat-num">${p1Result.modelTitle}</div><div class="stat-label">Type of Engagement</div></div></div>
 <h2>What this person does</h2>${finalType.whatTheyDo.map(i => '<div class="item">\u25C6 ' + i + '</div>').join("")}
 <h2>What to look for</h2>${finalType.whatToLookFor.map(i => '<div class="item">\u2192 ' + i + '</div>').join("")}
 <h2>Interview questions</h2>${finalType.interviewQs.map(i => '<div class="item" style="font-style:italic">' + i + '</div>').join("")}
@@ -289,20 +290,22 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
         {/* ═══ INTRO ═══ */}
         {phase === "intro" && (
           <div className={fadeIn ? "fade-active" : "fade-enter"} style={{ textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "75vh" }}>
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "#999", marginBottom: 32 }}>Assessment Tool</div>
-            <h1 style={{ fontSize: "clamp(32px, 5vw, 48px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 28, letterSpacing: "-0.01em" }}>
+            <h1 style={{ fontSize: "clamp(32px, 5vw, 48px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 20, letterSpacing: "-0.01em" }}>
               Do You Need a<br /><em style={{ fontWeight: 500 }}>Chief of Staff?</em>
             </h1>
+            <p style={{ fontSize: 20, lineHeight: 1.7, color: "#444", maxWidth: 460, margin: "0 auto 28px", fontWeight: 500 }}>
+              Chances are you're <span style={{ textDecoration: "underline", textDecorationColor: "#2c5f8a", textUnderlineOffset: "4px", textDecorationThickness: "2px" }}>underwater</span> with work and curious if a Chief of Staff can help. By taking this assessment, we'll get you <span style={{ textDecoration: "underline", textDecorationColor: "#d4872c", textUnderlineOffset: "4px", textDecorationThickness: "2px" }}>clarity fast</span>.
+            </p>
             <p style={{ fontSize: 17, lineHeight: 1.8, color: "#555", maxWidth: 460, margin: "0 auto 0", fontWeight: 400 }}>
               A two-part assessment:
             </p>
-            <div style={{ textAlign: "left", maxWidth: 420, margin: "12px auto 0", fontSize: 16, lineHeight: 1.8, color: "#888", fontWeight: 300 }}>
-              <p style={{ marginBottom: 4 }}>1. Determine if you need a Chief of Staff.</p>
-              <p>2. Focus in on the right type of Chief of Staff.</p>
+            <div style={{ textAlign: "center", maxWidth: 520, margin: "12px auto 0", fontSize: 16, lineHeight: 1.8, color: "#888", fontWeight: 300 }}>
+              <p style={{ marginBottom: 4, whiteSpace: "nowrap" }}>First, determine if you need a CoS and the right engagement type.</p>
+              <p>Then, narrow in on the right profile and archetype.</p>
             </div>
             <div style={{ height: 48 }} />
             <button className="primary-btn" onClick={() => { setStep(0); setPhase("phase1"); }}>Begin Assessment</button>
-            <div style={{ marginTop: 24, fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#bbb" }}>Takes about 4 minutes</div>
+            <div style={{ marginTop: 24, fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#bbb" }}>~4 minutes</div>
 
             <div style={{ marginTop: 48, paddingTop: 32, borderTop: "1px solid #e4e0da", maxWidth: 440, margin: "48px auto 0" }}>
               <p style={{ fontSize: 14, lineHeight: 1.7, color: "#888", fontWeight: 300 }}>
@@ -320,7 +323,7 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
             <div className="page-section">
               <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>About the author</h2>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 24 }}>
-                <img src={"data:image/jpeg;base64,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"} alt="Elliott Fisher" style={{ width: 52, height: 52, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+                <img src={"data:image/jpeg;base64,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"} alt="Elliott Fisher" style={{ width: 52, height: 52, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
                 <div>
                   <div style={{ fontWeight: 500, fontSize: 18, marginBottom: 2 }}><a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer" style={{ color: "#1a1a1a", textDecoration: "none", borderBottom: "1px solid #2c5f8a33" }}>Elliott Fisher</a></div>
                   <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: "#888" }}>2x Chief of Staff</div>
@@ -331,7 +334,7 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
 
             <div className="page-section">
               <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>How this assessment was built</h2>
-              <p>This assessment was developed from direct experience placing and operating as a Chief of Staff across multiple company stages, combined with patterns observed across dozens of CoS engagements.</p>
+              <p>This assessment was developed from direct experience advising and operating as a Chief of Staff across multiple company stages, combined with patterns observed across dozens of CoS engagements.</p>
               <p>The scoring model evaluates organizational complexity across seven dimensions: span of control, decision bottlenecks, strategic time allocation, meeting load, cross-functional health, delegation capacity, and company stage. These produce a composite complexity score (7–28) that determines whether a CoS is warranted.</p>
               <p>Budget and duration inputs drive the fractional vs. full-time recommendation. Each factor produces weighted signals — the model with more signals wins the recommendation, with a confidence threshold that distinguishes a "strong" recommendation from a "likely" one.</p>
               <p>The archetype system identifies four distinct CoS profiles — Strategic, Operational, External-Facing, and Transformation — based on where organizational pain is concentrated. Most leaders need a blend, which is why we surface a secondary archetype when the signal is strong enough.</p>
@@ -461,7 +464,7 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
                 })()}
                 <div className="model-card" style={{ borderColor: p1Result.model === "fractional" ? "#2c5f8a" : "#4a7c6f", background: p1Result.model === "fractional" ? "linear-gradient(135deg, #f7f9fb 0%, #faf8f5 100%)" : "linear-gradient(135deg, #f5faf7 0%, #faf8f5 100%)", marginBottom: 32 }}>
                   <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: p1Result.model === "fractional" ? "#2c5f8a" : "#4a7c6f" }} />
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: p1Result.model === "fractional" ? "#2c5f8a" : "#4a7c6f", marginBottom: 12, fontWeight: 500 }}>Engagement Model</div>
+                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: p1Result.model === "fractional" ? "#2c5f8a" : "#4a7c6f", marginBottom: 12, fontWeight: 500 }}>Type of Engagement</div>
                   <h3 style={{ fontSize: 24, fontWeight: 400, marginBottom: 6 }}>{p1Result.modelTitle}</h3>
                   <p style={{ fontSize: 15, color: "#666", fontWeight: 300, fontStyle: "italic", marginBottom: 20, lineHeight: 1.5 }}>{p1Result.modelSubtitle}</p>
                   <div className="section-label" style={{ marginBottom: 10 }}>Why this model</div>
@@ -484,7 +487,7 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
         {phase === "phase2intro" && (
           <div className={fadeIn ? "fade-active" : "fade-enter"} style={{ textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "75vh" }}>
             <h2 style={{ fontSize: "clamp(28px, 4.5vw, 42px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 20 }}>What Kind of<br /><em style={{ fontWeight: 500 }}>Chief of Staff?</em></h2>
-            <p style={{ fontSize: 16, lineHeight: 1.7, color: "#666", maxWidth: 420, margin: "0 auto 48px", fontWeight: 300 }}>Seven questions &mdash; five quick picks and two short write-ins &mdash; to identify your ideal archetype and build a detailed hiring blueprint.</p>
+            <p style={{ fontSize: 16, lineHeight: 1.7, color: "#666", maxWidth: 420, margin: "0 auto 48px", fontWeight: 300 }}>Seven questions to identify your ideal archetype.</p>
             <button className="primary-btn" onClick={beginPhase2}>Let's Go</button>
           </div>
         )}
@@ -548,7 +551,17 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
           <div className={fadeIn ? "fade-active" : "fade-enter"}>
             <div style={{ marginBottom: 8 }}><span className="result-tag" style={{ background: finalType.color }}>{finalType.icon} Your Archetype</span></div>
             <h2 style={{ fontSize: "clamp(28px, 4.5vw, 42px)", fontWeight: 400, lineHeight: 1.2, marginBottom: 8 }}>{finalType.title}</h2>
-            <p style={{ fontSize: 19, color: "#888", fontStyle: "italic", fontWeight: 300, marginBottom: 32 }}>{finalType.tagline}</p>
+            <p style={{ fontSize: 19, color: "#888", fontStyle: "italic", fontWeight: 300, marginBottom: 20 }}>{finalType.tagline}</p>
+
+            {p1Result?.need === "yes" && (
+              <div style={{ padding: 16, background: "#f7f5f2", borderRadius: 4, marginBottom: 32, borderLeft: `3px solid ${finalType.color}` }}>
+                <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 14, color: "#444", lineHeight: 1.6, margin: 0 }}>
+                  Our recommendation: You need a <strong>{p1Result.model === "fractional" ? "fractional" : "full-time"} {finalType.title}</strong>.
+                  {p1Result.model === "fractional" ? " That means the right person 2\u20133 days a week \u2014 not a full-time hire." : " This person should be fully embedded in your team."}
+                </p>
+              </div>
+            )}
+
             <p style={{ fontSize: 16, lineHeight: 1.75, color: "#444", marginBottom: 40, fontWeight: 300 }}>{finalType.description}</p>
 
             <div style={{ marginBottom: 40 }}>
@@ -598,13 +611,13 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
               </button>
             </div>
 
-            {p1Result?.need === "yes" && <div className="divider">{p1Result.modelTitle}</div>}
+            
 
             <div className="divider">Stay Connected</div>
             {!leadSubmitted ? (
               <div style={{ border: "1.5px solid #d4d0ca", borderRadius: 6, padding: 32, marginBottom: 40, background: "linear-gradient(135deg, #fdfcfa 0%, #f7f5f2 100%)" }}>
                 <h3 style={{ fontSize: 20, fontWeight: 400, marginBottom: 8 }}>Want help finding your {finalType.title.split(" ").slice(0, -1).join(" ").toLowerCase()} CoS?</h3>
-                <p style={{ fontSize: 14, color: "#888", fontWeight: 300, lineHeight: 1.6, marginBottom: 24 }}>Leave your info and I'll send you a tailored job description template and &mdash; if you're going fractional &mdash; connect you with vetted candidates who match your profile.</p>
+                <p style={{ fontSize: 14, color: "#888", fontWeight: 300, lineHeight: 1.6, marginBottom: 24 }}>Leave your info and we'll send you a tailored job description template and &mdash; if you're going fractional &mdash; connect you with vetted candidates who match your profile.</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
                   <input className="lead-input" type="text" placeholder="Your name" value={leadName} onChange={(e) => setLeadName(e.target.value)} />
                   <input className="lead-input" type="email" placeholder="Email address *" value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)} />
@@ -620,8 +633,8 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
                 <div style={{ fontSize: 28, marginBottom: 12 }}>{"\u2713"}</div>
                 <h3 style={{ fontSize: 20, fontWeight: 400, marginBottom: 8 }}>You're in.</h3>
                 <p style={{ fontSize: 14, color: "#666", fontWeight: 300, lineHeight: 1.6, fontFamily: "'DM Mono', monospace" }}>
-                  I'll send your tailored {finalType.title.toLowerCase()} blueprint to <strong>{leadEmail}</strong> shortly.
-                  {p1Result?.model === "fractional" && " I'll also reach out about fractional matches."}
+                  We'll send your tailored {finalType.title.toLowerCase()} blueprint to <strong>{leadEmail}</strong> shortly.
+                  {p1Result?.model === "fractional" && " We'll also reach out about fractional matches."}
                 </p>
               </div>
             )}
