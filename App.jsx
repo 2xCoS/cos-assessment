@@ -466,7 +466,7 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
                   <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: p1Result.model === "fractional" ? "#2c5f8a" : "#4a7c6f" }} />
                   <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: p1Result.model === "fractional" ? "#2c5f8a" : "#4a7c6f", marginBottom: 12, fontWeight: 500 }}>Type of Engagement</div>
                   <h3 style={{ fontSize: 24, fontWeight: 400, marginBottom: 6 }}>{p1Result.model === "fractional" ? "Fractional" : "Full-Time"}</h3>
-                  <p style={{ fontSize: 15, color: "#666", fontWeight: 300, fontStyle: "italic", marginBottom: 20, lineHeight: 1.5, whiteSpace: "nowrap" }}>{p1Result.modelSubtitle}</p>
+                  <p style={{ fontSize: 15, color: "#666", fontWeight: 300, fontStyle: "italic", marginBottom: 20, lineHeight: 1.5 }}>{p1Result.modelSubtitle}</p>
                   <div className="section-label" style={{ marginBottom: 10 }}>Why this model</div>
                   {p1Result.signals.map((s, i) => <div key={i} className="signal-row"><span style={{ color: p1Result.model === "fractional" ? "#2c5f8a" : "#4a7c6f" }}>{"\u2713"}</span> {s}</div>)}
                   {p1Result.counterSignals.length > 0 && (<>
