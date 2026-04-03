@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 
 const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzo_2fc4r1dMBJp4EE-cgKPVAHvT9KgaawXEGGQ1MVrTT8DX1u3Hy0_eRYhUXyvXyENiQ/exec";
 const LINKEDIN_URL = "https://www.linkedin.com/in/elliott-fisher-cos/";
-const CALENDLY_URL = "https://calendly.com/elliottfisher/cos-assessment";
 
 // ═══ FUNNEL TRACKING ═══
 function trackEvent(name, data = {}) {
@@ -187,11 +186,11 @@ export default function ChiefOfStaffAssessment() {
   const [leadRole, setLeadRole] = useState("");
   const [leadCompanySize, setLeadCompanySize] = useState("");
 
-  // ═══ SESSION STORAGE — SAVE PROGRESS ═══
+  // ═══ LOCAL STORAGE — SAVE PROGRESS ═══
   useEffect(() => {
-    if (phase === "intro" || phase === "about" || phase === "archetypes") return;
+    if (phase === "intro" || phase === "about" || phase === "archetypes" || phase === "compare-input" || phase === "compare") return;
     try {
-      sessionStorage.setItem("cos_progress", JSON.stringify({
+      localStorage.setItem("cos_progress", JSON.stringify({
         phase, step, p1Answers, p2Answers, otherTexts, writeInAnswers,
         p1Result, p2Result, writeInValue
       }));
@@ -231,9 +230,9 @@ export default function ChiefOfStaffAssessment() {
         }
       }
     } else {
-      // Restore from sessionStorage if mid-assessment
+      // Restore from localStorage if mid-assessment
       try {
-        const saved = sessionStorage.getItem("cos_progress");
+        const saved = localStorage.getItem("cos_progress");
         if (saved) {
           const s = JSON.parse(saved);
           if (s.phase && s.phase !== "intro") {
@@ -288,7 +287,7 @@ export default function ChiefOfStaffAssessment() {
     setP1Result(null); setP2Result(null); setSelected(null); setLeadName(""); setLeadEmail(""); setLeadPhone("");
     setLeadSubmitted(false); setShowOtherInput(false); setOtherValue(""); setWriteInValue("");
     setLeadCompany(""); setLeadRole(""); setLeadCompanySize(""); setShareUrl(""); setShareCopied(false);
-    try { sessionStorage.removeItem("cos_progress"); } catch {}
+    try { localStorage.removeItem("cos_progress"); } catch {}
   };
   const startPhase2 = () => { setStep(0); setPhase("phase2intro"); };
   const beginPhase2 = () => { setStep(0); setShowOtherInput(false); setOtherValue(""); setPhase("phase2mc"); };
@@ -298,7 +297,7 @@ export default function ChiefOfStaffAssessment() {
     trackEvent("lead_submit", { archetype: p2Result?.primary, model: p1Result?.model });
     submitToSheets({ name: leadName.trim(), email: leadEmail.trim(), phone: leadPhone.trim(), company: leadCompany.trim(), role: leadRole.trim(), companySize: leadCompanySize.trim(), complexityScore: p1Result?.totalScore || null, engagementModel: p1Result?.need === "yes" ? p1Result.modelTitle : "No CoS needed", budget: p1Answers?.budget || null, archetype: p2Result ? COS_TYPES[p2Result.primary]?.title : null, secondaryArchetype: p2Result?.secondary ? COS_TYPES[p2Result.secondary]?.title : null, dayOne: writeInAnswers.day_one || "", dayThirty: writeInAnswers.day_thirty || "", source: "editorial", sendEmail: true, shareUrl: generateShareUrl() || "", answers: { phase1: p1Answers, phase2: p2Answers, otherResponses: otherTexts, writeIns: writeInAnswers } });
     setLeadSubmitted(true); setLeadSubmitting(false);
-    try { sessionStorage.removeItem("cos_progress"); } catch {}
+    try { localStorage.removeItem("cos_progress"); } catch {}
   };
   const navigateTo = (dest) => { setPrevPhase(phase); setPhase(dest); };
   const goBackFromPage = () => { setPhase(prevPhase || "intro"); };
@@ -474,8 +473,6 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
         .gated-blur { filter: blur(6px); pointer-events: none; user-select: none; opacity: 0.5; }
         .gate-overlay { position: relative; margin: -60px 0 32px; padding: 32px; background: linear-gradient(180deg, rgba(250,248,245,0) 0%, rgba(250,248,245,1) 20%, rgba(250,248,245,1) 100%); text-align: center; z-index: 2; }
         .gate-card { border: 2px solid #1a1a1a; border-radius: 6px; padding: 32px; background: #fff; display: inline-block; max-width: 480px; text-align: left; }
-        .book-call-btn { display: block; width: 100%; padding: 16px; background: linear-gradient(135deg, #2c5f8a 0%, #1a4060 100%); color: white; border: none; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; text-align: center; text-decoration: none; }
-        .book-call-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(44,95,138,0.3); }
         @media (max-width: 600px) {
           .nav-bar { padding: 0 16px; gap: 16px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
           .nav-link { font-size: 11px; padding: 14px 0; white-space: nowrap; }
@@ -922,15 +919,6 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
                     <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: "#555", lineHeight: 1.6 }}>
                       Your answers also showed strong signals for a {secondaryType.title.toLowerCase()}. The ideal candidate might blend both &mdash; someone who leads with {p2Result.primary} skills but can flex into {p2Result.secondary} work when needed.
                     </p>
-                  </div>
-                )}
-
-                {/* ═══ BOOK A CALL — for high-intent leads ═══ */}
-                {leadSubmitted && p1Result?.totalScore >= 18 && (
-                  <div style={{ marginBottom: 32, padding: 24, background: "linear-gradient(135deg, #f7f9fb 0%, #f0f5fa 100%)", borderRadius: 6, border: "1.5px solid #c8d8e8" }}>
-                    <div className="section-label" style={{ color: "#2c5f8a", marginBottom: 6 }}>Ready to move forward?</div>
-                    <p style={{ fontSize: 14, color: "#555", fontWeight: 300, lineHeight: 1.6, marginBottom: 16 }}>Your complexity score is {p1Result.totalScore}/28 — that's high enough that this conversation usually saves leaders months of trial and error. Book a free 30-minute call to talk through your results and next steps.</p>
-                    <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer" className="book-call-btn" onClick={() => trackEvent("book_call_click")}>Book a Free Strategy Call &rarr;</a>
                   </div>
                 )}
 
