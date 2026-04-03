@@ -514,7 +514,7 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
               A two-part assessment:
             </p>
             <div style={{ textAlign: "center", maxWidth: 520, margin: "12px auto 0", fontSize: 16, lineHeight: 1.8, color: "#1a1a1a", fontWeight: 300 }}>
-              <p style={{ marginBottom: 4, whiteSpace: "nowrap" }}>First, determine if you need a CoS and the right engagement type.</p>
+              <p style={{ marginBottom: 4 }}>First, determine if you need a CoS and the right engagement type.</p>
               <p>Then, narrow in on the right profile and archetype.</p>
             </div>
             <div style={{ height: 48 }} />
