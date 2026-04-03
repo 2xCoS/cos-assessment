@@ -2,6 +2,43 @@ import { useState, useEffect } from "react";
 
 const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzo_2fc4r1dMBJp4EE-cgKPVAHvT9KgaawXEGGQ1MVrTT8DX1u3Hy0_eRYhUXyvXyENiQ/exec";
 const LINKEDIN_URL = "https://www.linkedin.com/in/elliott-fisher-cos/";
+const CALENDLY_URL = "https://calendly.com/elliottfisher/cos-assessment";
+
+// ═══ FUNNEL TRACKING ═══
+function trackEvent(name, data = {}) {
+  try {
+    if (window.va) window.va("event", { name, ...data });
+  } catch {}
+}
+
+// ═══ SHAREABLE RESULTS ═══
+function encodeResults(p1Answers, p2Answers, writeInAnswers) {
+  try {
+    const data = { p1: p1Answers, p2: p2Answers, w: writeInAnswers };
+    return btoa(JSON.stringify(data)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  } catch { return null; }
+}
+function decodeResults(code) {
+  try {
+    const padded = code.replace(/-/g, '+').replace(/_/g, '/');
+    const json = atob(padded);
+    const data = JSON.parse(json);
+    if (data.p1 && data.p2) return data;
+    return null;
+  } catch { return null; }
+}
+
+// ═══ URL HELPERS ═══
+function extractResultCode(input) {
+  if (!input) return null;
+  const trimmed = input.trim();
+  // If it's a full URL with #r=
+  const hashMatch = trimmed.match(/#r=([A-Za-z0-9_-]+)/);
+  if (hashMatch) return hashMatch[1];
+  // If it's just the raw code (no URL)
+  if (/^[A-Za-z0-9_-]{10,}$/.test(trimmed)) return trimmed;
+  return null;
+}
 
 const PHASE1_QUESTIONS = [
   { id: "reports", question: "How many people report directly to you?", subtext: "Include anyone who has a recurring 1:1 with you", options: [{ label: "1\u20134", value: 1, icon: "\u25CB" },{ label: "5\u20138", value: 2, icon: "\u25CB\u25CB" },{ label: "9\u201312", value: 3, icon: "\u25CB\u25CB\u25CB" },{ label: "13+", value: 4, icon: "\u25CB\u25CB\u25CB\u25CB" }] },
@@ -37,6 +74,7 @@ const COS_TYPES = {
     interviewQs: ["Walk me through a time you had to synthesize a complex problem into a clear recommendation for a senior leader.","How would you approach building our 3-year strategic plan from scratch?","Tell me about a decision you influenced without having direct authority."],
     compRange: { ft: "$140K\u2013$250K+", frac: "$8K\u2013$18K/mo" },
     bestFor: "Leaders drowning in complexity who need someone to think alongside them. Common in companies navigating fundraising, M&A, or major strategic pivots.",
+    caseStudy: { title: "Series B SaaS — From Chaos to Clarity", summary: "A B2B SaaS company post-Series B ($40M) was drowning in competing priorities. The CEO was spending 70% of time reacting to inbound requests. A strategic CoS took over annual planning, built a decision framework for the exec team, and freed the CEO to focus on three board-level initiatives. Within 90 days, strategic time went from 15% to 55%.", first90: ["Week 1–2: Shadow the CEO, audit every meeting and recurring commitment", "Week 3–4: Build a strategic priorities framework and present to the exec team", "Month 2: Own the quarterly planning process end-to-end", "Month 3: Deliver the first board deck independently and run a strategy offsite"] },
   },
   operational: {
     title: "Operational Chief of Staff", tagline: "The machine that makes your machine work.", color: "#8b6914", accent: "#faf5e8", icon: "\u2699\uFE0F",
@@ -46,6 +84,7 @@ const COS_TYPES = {
     interviewQs: ["Describe a time you built an operating cadence or process from scratch. What worked and what didn't?","How do you hold a leadership team accountable to commitments without being seen as a taskmaster?","Walk me through how you'd diagnose why cross-functional projects keep stalling here."],
     compRange: { ft: "$120K\u2013$200K+", frac: "$7K\u2013$15K/mo" },
     bestFor: "Organizations where great ideas keep dying in execution. Things get decided but never shipped. Teams are busy but misaligned.",
+    caseStudy: { title: "Growth-Stage Fintech — Building the Operating System", summary: "A 150-person fintech had great talent but terrible execution. OKRs were set but never tracked. Cross-functional projects stalled because no one owned the connective tissue between teams. An operational CoS designed a weekly leadership cadence, built an accountability system, and project-managed three stalled initiatives to completion in the first quarter.", first90: ["Week 1–2: Attend every recurring meeting, map the real decision-making flow", "Week 3–4: Design and launch a leadership operating cadence (weekly sync, monthly review, quarterly planning)", "Month 2: Take ownership of OKR tracking and cross-functional project management", "Month 3: Run the first quarterly business review and identify the top 3 process bottlenecks to fix next"] },
   },
   external: {
     title: "External-Facing Chief of Staff", tagline: "Your voice in every room you can't be in.", color: "#6b3a6b", accent: "#f5edf5", icon: "\uD83E\uDD1D",
@@ -55,6 +94,7 @@ const COS_TYPES = {
     interviewQs: ["Tell me about a time you represented a senior leader in a high-stakes external meeting. What was your approach?","How do you build trust with a board member or key stakeholder who's skeptical?","Describe a situation where you had to deliver difficult news to an external partner."],
     compRange: { ft: "$150K\u2013$250K+", frac: "$10K\u2013$20K/mo" },
     bestFor: "CEOs who are spread too thin across board, investor, and partner obligations. Common in companies with complex stakeholder landscapes or heavy regulatory environments.",
+    caseStudy: { title: "Pre-IPO Healthcare — Managing the Stakeholder Web", summary: "A healthcare company preparing for IPO had a CEO stretched across board members, three regulatory bodies, two strategic partners, and an increasingly vocal investor base. An external-facing CoS took over investor update cadence, board prep, and partner relationship management. The CEO went from 12 external meetings per week to 4 — attending only the ones that truly required their presence.", first90: ["Week 1–2: Map every external relationship — board, investors, partners, regulators — and assess health of each", "Week 3–4: Take over board prep and investor update materials", "Month 2: Begin representing the CEO in partner check-ins and regulatory touchpoints", "Month 3: Own the full external communications calendar and establish a stakeholder CRM"] },
   },
   growth: {
     title: "Transformation Chief of Staff", tagline: "A scaling architect for what comes next.", color: "#c4532b", accent: "#fdf0ec", icon: "\uD83D\uDCC8",
@@ -64,6 +104,7 @@ const COS_TYPES = {
     interviewQs: ["Tell me about a time you had to redesign an organization while it was still operating. How did you manage the transition?","How do you decide what to systematize vs. what to keep scrappy?","Describe a situation where you had to preserve team culture through a major change."],
     compRange: { ft: "$130K\u2013$220K+", frac: "$8K\u2013$16K/mo" },
     bestFor: "Companies doubling headcount, integrating acquisitions, or navigating a fundamental shift in business model. The org chart is changing faster than the culture can keep up.",
+    caseStudy: { title: "Series C Marketplace — Scaling Without Breaking", summary: "A marketplace company that grew from 80 to 250 people in 18 months was imploding. Three acquisitions in one year meant three different cultures, duplicated roles, and no unified operating model. A transformation CoS led the org redesign, created a unified onboarding process, and managed the integration of the largest acquisition — all while keeping the existing business running.", first90: ["Week 1–2: Conduct a full organizational health assessment — interview every team lead, map overlaps and gaps", "Week 3–4: Present an integration roadmap to the exec team with clear milestones", "Month 2: Begin executing org redesign — consolidate overlapping functions, define new team charters", "Month 3: Launch unified onboarding, codify cultural values, and run the first all-hands as one company"] },
   },
 };
 
@@ -130,6 +171,85 @@ export default function ChiefOfStaffAssessment() {
   const [writeInValue, setWriteInValue] = useState("");
   const [prevPhase, setPrevPhase] = useState(null);
   const [expandedArchetypes, setExpandedArchetypes] = useState({});
+  const [shareUrl, setShareUrl] = useState("");
+  const [shareCopied, setShareCopied] = useState(false);
+  const [isSharedView, setIsSharedView] = useState(false);
+  const [compareData, setCompareData] = useState(null);
+  const [compareUrl, setCompareUrl] = useState("");
+  const [nurtureName, setNurtureName] = useState("");
+  const [nurtureEmail, setNurtureEmail] = useState("");
+  const [nurtureSubmitted, setNurtureSubmitted] = useState(false);
+  const [nurtureSubmitting, setNurtureSubmitting] = useState(false);
+  const [compareUrlA, setCompareUrlA] = useState("");
+  const [compareUrlB, setCompareUrlB] = useState("");
+  const [compareError, setCompareError] = useState("");
+  const [leadCompany, setLeadCompany] = useState("");
+  const [leadRole, setLeadRole] = useState("");
+  const [leadCompanySize, setLeadCompanySize] = useState("");
+
+  // ═══ SESSION STORAGE — SAVE PROGRESS ═══
+  useEffect(() => {
+    if (phase === "intro" || phase === "about" || phase === "archetypes") return;
+    try {
+      sessionStorage.setItem("cos_progress", JSON.stringify({
+        phase, step, p1Answers, p2Answers, otherTexts, writeInAnswers,
+        p1Result, p2Result, writeInValue
+      }));
+    } catch {}
+  }, [phase, step, p1Answers, p2Answers, otherTexts, writeInAnswers, p1Result, p2Result, writeInValue]);
+
+  // ═══ PARSE URL HASH OR RESTORE SESSION ON MOUNT ═══
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.startsWith('#r=')) {
+      const code = hash.slice(3);
+      const decoded = decodeResults(code);
+      if (decoded) {
+        setP1Answers(decoded.p1);
+        setP2Answers(decoded.p2);
+        if (decoded.w) setWriteInAnswers(decoded.w);
+        const r1 = getPhase1Result(decoded.p1);
+        const r2 = getPhase2Result(decoded.p2);
+        setP1Result(r1);
+        setP2Result(r2);
+        setIsSharedView(true);
+        setPhase("final");
+      }
+    } else if (hash.startsWith('#compare=')) {
+      const parts = hash.slice(9).split(',');
+      if (parts.length === 2) {
+        const d1 = decodeResults(parts[0]);
+        const d2 = decodeResults(parts[1]);
+        if (d1 && d2) {
+          const r1a = getPhase1Result(d1.p1), r2a = getPhase2Result(d1.p2);
+          const r1b = getPhase1Result(d2.p1), r2b = getPhase2Result(d2.p2);
+          setCompareData({
+            a: { p1Result: r1a, p2Result: r2a, writeIns: d1.w || {} },
+            b: { p1Result: r1b, p2Result: r2b, writeIns: d2.w || {} },
+          });
+          setPhase("compare");
+        }
+      }
+    } else {
+      // Restore from sessionStorage if mid-assessment
+      try {
+        const saved = sessionStorage.getItem("cos_progress");
+        if (saved) {
+          const s = JSON.parse(saved);
+          if (s.phase && s.phase !== "intro") {
+            setPhase(s.phase); setStep(s.step || 0);
+            if (s.p1Answers) setP1Answers(s.p1Answers);
+            if (s.p2Answers) setP2Answers(s.p2Answers);
+            if (s.otherTexts) setOtherTexts(s.otherTexts);
+            if (s.writeInAnswers) setWriteInAnswers(s.writeInAnswers);
+            if (s.p1Result) setP1Result(s.p1Result);
+            if (s.p2Result) setP2Result(s.p2Result);
+            if (s.writeInValue) setWriteInValue(s.writeInValue);
+          }
+        }
+      } catch {}
+    }
+  }, []);
 
   useEffect(() => { setFadeIn(false); const t = setTimeout(() => setFadeIn(true), 30); return () => clearTimeout(t); }, [phase, step]);
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [phase]);
@@ -137,7 +257,7 @@ export default function ChiefOfStaffAssessment() {
   const handleP1Select = (qId, value) => {
     setSelected(value);
     const na = { ...p1Answers, [qId]: value }; setP1Answers(na);
-    setTimeout(() => { setSelected(null); if (step + 1 < PHASE1_QUESTIONS.length) setStep(step + 1); else { setP1Result(getPhase1Result(na)); setPhase("phase1result"); } }, 350);
+    setTimeout(() => { setSelected(null); if (step + 1 < PHASE1_QUESTIONS.length) setStep(step + 1); else { const result = getPhase1Result(na); setP1Result(result); trackEvent("p1_complete", { score: result.totalScore, need: result.need }); setPhase("phase1result"); } }, 350);
   };
   const handleP2MCSelect = (qId, value) => {
     setSelected(value); setShowOtherInput(false); setOtherValue("");
@@ -156,28 +276,88 @@ export default function ChiefOfStaffAssessment() {
   const handleWriteInNext = () => {
     if (writeInValue.trim()) setWriteInAnswers((p) => ({ ...p, [currentWriteIn.id]: writeInValue.trim() }));
     if (step + 1 < PHASE2_WRITEIN_QUESTIONS.length) { setStep(step + 1); setWriteInValue(""); }
-    else { setP2Result(getPhase2Result(p2Answers)); setPhase("final"); }
+    else { const result = getPhase2Result(p2Answers); setP2Result(result); trackEvent("p2_complete", { archetype: result.primary }); setPhase("final"); }
   };
   const handleWriteInSkip = () => {
     if (step + 1 < PHASE2_WRITEIN_QUESTIONS.length) { setStep(step + 1); setWriteInValue(""); }
-    else { setP2Result(getPhase2Result(p2Answers)); setPhase("final"); }
+    else { const result = getPhase2Result(p2Answers); setP2Result(result); trackEvent("p2_complete", { archetype: result.primary }); setPhase("final"); }
   };
   const goBack = () => { if (step > 0) { setSelected(null); setShowOtherInput(false); setOtherValue(""); setWriteInValue(""); setStep(step - 1); } };
   const restart = () => {
     setPhase("intro"); setStep(0); setP1Answers({}); setP2Answers({}); setOtherTexts({}); setWriteInAnswers({});
     setP1Result(null); setP2Result(null); setSelected(null); setLeadName(""); setLeadEmail(""); setLeadPhone("");
     setLeadSubmitted(false); setShowOtherInput(false); setOtherValue(""); setWriteInValue("");
+    setLeadCompany(""); setLeadRole(""); setLeadCompanySize(""); setShareUrl(""); setShareCopied(false);
+    try { sessionStorage.removeItem("cos_progress"); } catch {}
   };
   const startPhase2 = () => { setStep(0); setPhase("phase2intro"); };
   const beginPhase2 = () => { setStep(0); setShowOtherInput(false); setOtherValue(""); setPhase("phase2mc"); };
   const handleLeadSubmit = () => {
     if (!leadEmail.trim()) return;
     setLeadSubmitting(true);
-    submitToSheets({ name: leadName.trim(), email: leadEmail.trim(), phone: leadPhone.trim(), complexityScore: p1Result?.totalScore || null, engagementModel: p1Result?.need === "yes" ? p1Result.modelTitle : "No CoS needed", archetype: p2Result ? COS_TYPES[p2Result.primary]?.title : null, secondaryArchetype: p2Result?.secondary ? COS_TYPES[p2Result.secondary]?.title : null, dayOne: writeInAnswers.day_one || "", dayThirty: writeInAnswers.day_thirty || "", source: "editorial", answers: { phase1: p1Answers, phase2: p2Answers, otherResponses: otherTexts, writeIns: writeInAnswers } });
+    trackEvent("lead_submit", { archetype: p2Result?.primary, model: p1Result?.model });
+    submitToSheets({ name: leadName.trim(), email: leadEmail.trim(), phone: leadPhone.trim(), company: leadCompany.trim(), role: leadRole.trim(), companySize: leadCompanySize.trim(), complexityScore: p1Result?.totalScore || null, engagementModel: p1Result?.need === "yes" ? p1Result.modelTitle : "No CoS needed", budget: p1Answers?.budget || null, archetype: p2Result ? COS_TYPES[p2Result.primary]?.title : null, secondaryArchetype: p2Result?.secondary ? COS_TYPES[p2Result.secondary]?.title : null, dayOne: writeInAnswers.day_one || "", dayThirty: writeInAnswers.day_thirty || "", source: "editorial", sendEmail: true, shareUrl: generateShareUrl() || "", answers: { phase1: p1Answers, phase2: p2Answers, otherResponses: otherTexts, writeIns: writeInAnswers } });
     setLeadSubmitted(true); setLeadSubmitting(false);
+    try { sessionStorage.removeItem("cos_progress"); } catch {}
   };
   const navigateTo = (dest) => { setPrevPhase(phase); setPhase(dest); };
   const goBackFromPage = () => { setPhase(prevPhase || "intro"); };
+
+  // ═══ SHARE RESULTS ═══
+  const generateShareUrl = () => {
+    const code = encodeResults(p1Answers, p2Answers, writeInAnswers);
+    if (code) {
+      const url = `${window.location.origin}${window.location.pathname}#r=${code}`;
+      setShareUrl(url);
+      return url;
+    }
+    return null;
+  };
+  const copyShareUrl = () => {
+    const url = shareUrl || generateShareUrl();
+    if (url) {
+      navigator.clipboard.writeText(url).then(() => {
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2500);
+      });
+    }
+  };
+
+  // ═══ COMPARE ═══
+  const handleCompare = () => {
+    setCompareError("");
+    const codeA = extractResultCode(compareUrlA);
+    const codeB = extractResultCode(compareUrlB);
+    if (!codeA || !codeB) { setCompareError("Please paste a valid results link in both fields."); return; }
+    const d1 = decodeResults(codeA);
+    const d2 = decodeResults(codeB);
+    if (!d1) { setCompareError("Couldn't read the first results link. Make sure it's a valid shareable link."); return; }
+    if (!d2) { setCompareError("Couldn't read the second results link. Make sure it's a valid shareable link."); return; }
+    const r1a = getPhase1Result(d1.p1), r2a = getPhase2Result(d1.p2);
+    const r1b = getPhase1Result(d2.p1), r2b = getPhase2Result(d2.p2);
+    setCompareData({
+      a: { p1Result: r1a, p2Result: r2a, writeIns: d1.w || {} },
+      b: { p1Result: r1b, p2Result: r2b, writeIns: d2.w || {} },
+    });
+    setPhase("compare");
+  };
+
+  // ═══ NURTURE PATH ═══
+  const handleNurtureSubmit = () => {
+    if (!nurtureEmail.trim()) return;
+    setNurtureSubmitting(true);
+    submitToSheets({
+      name: nurtureName.trim(),
+      email: nurtureEmail.trim(),
+      complexityScore: p1Result?.totalScore || null,
+      engagementModel: "Not ready yet",
+      archetype: null,
+      source: "nurture",
+      nurture: true,
+    });
+    setNurtureSubmitted(true);
+    setNurtureSubmitting(false);
+  };
 
   const downloadResults = () => {
     if (!finalType || !p1Result) return;
@@ -222,7 +402,7 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
   const totalP2Steps = PHASE2_MC_QUESTIONS.length + PHASE2_WRITEIN_QUESTIONS.length;
   const currentP2Step = phase === "phase2mc" ? step : phase === "phase2writein" ? PHASE2_MC_QUESTIONS.length + step : 0;
 
-  const isAssessmentPhase = ["intro","phase1","phase1result","phase2intro","phase2mc","phase2writein","final"].includes(phase);
+  const isAssessmentPhase = ["intro","phase1","phase1result","phase2intro","phase2mc","phase2writein","final","compare","compare-input"].includes(phase);
 
   return (
     <div style={{ minHeight: "100vh", background: "#faf8f5", fontFamily: "'Newsreader', 'Georgia', serif", color: "#1a1a1a", position: "relative" }}>
@@ -276,16 +456,53 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
         .archetype-card:hover { border-color: #999; }
         .page-section { margin-bottom: 40px; }
         .page-section p { font-size: 16px; line-height: 1.75; color: #444; font-weight: 300; margin-bottom: 16px; }
+        .share-section { border: 1.5px solid #d4d0ca; border-radius: 6px; padding: 24px; margin-bottom: 32px; background: linear-gradient(135deg, #f7f9fb 0%, #faf8f5 100%); }
+        .share-url-box { display: flex; gap: 8px; align-items: stretch; margin-top: 12px; }
+        .share-url-input { flex: 1; padding: 10px 14px; border: 1px solid #d4d0ca; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 12px; color: #666; background: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .share-copy-btn { padding: 10px 20px; background: #1a1a1a; color: #faf8f5; border: none; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.05em; cursor: pointer; white-space: nowrap; transition: background 0.2s; }
+        .share-copy-btn:hover { background: #333; }
+        .share-copy-btn.copied { background: #4a7c6f; }
+        .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px; }
+        .compare-col { border: 1.5px solid #e4e0da; border-radius: 6px; padding: 24px; }
+        .compare-input-card { border: 1.5px solid #d4d0ca; border-radius: 6px; padding: 24px; margin-bottom: 16px; background: #fdfcfa; }
+        .compare-input-card.filled { border-color: #4a7c6f; background: linear-gradient(135deg, #f5faf7 0%, #fdfcfa 100%); }
+        .compare-error { padding: 12px 16px; background: #fdf0ec; border: 1px solid #e8c5bc; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 12px; color: #c4532b; margin-bottom: 16px; }
+        .nurture-card { border: 1.5px solid #d4d0ca; border-radius: 6px; padding: 28px; margin-bottom: 32px; background: linear-gradient(135deg, #f5faf7 0%, #faf8f5 100%); }
+        .case-study-card { border: 1.5px solid #e4e0da; border-radius: 6px; padding: 24px; margin: 20px 0; background: #fdfcfa; }
+        .first90-step { padding: 10px 0; border-bottom: 1px solid #eee; font-family: 'DM Mono', monospace; font-size: 12px; color: #555; line-height: 1.6; }
+        .gated-preview { position: relative; overflow: hidden; }
+        .gated-blur { filter: blur(6px); pointer-events: none; user-select: none; opacity: 0.5; }
+        .gate-overlay { position: relative; margin: -60px 0 32px; padding: 32px; background: linear-gradient(180deg, rgba(250,248,245,0) 0%, rgba(250,248,245,1) 20%, rgba(250,248,245,1) 100%); text-align: center; z-index: 2; }
+        .gate-card { border: 2px solid #1a1a1a; border-radius: 6px; padding: 32px; background: #fff; display: inline-block; max-width: 480px; text-align: left; }
+        .book-call-btn { display: block; width: 100%; padding: 16px; background: linear-gradient(135deg, #2c5f8a 0%, #1a4060 100%); color: white; border: none; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; text-align: center; text-decoration: none; }
+        .book-call-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(44,95,138,0.3); }
+        @media (max-width: 600px) {
+          .nav-bar { padding: 0 16px; gap: 16px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+          .nav-link { font-size: 11px; padding: 14px 0; white-space: nowrap; }
+          .option-btn { padding: 16px 18px; font-size: 13px; min-height: 52px; }
+          .model-card { padding: 20px; }
+          .impact-stat { min-width: 100%; }
+          .share-url-box { flex-direction: column; }
+          .share-url-input { width: 100%; }
+          .compare-grid { grid-template-columns: 1fr; }
+          .lead-input { padding: 16px; font-size: 16px; }
+          .writein-textarea { font-size: 16px; min-height: 120px; }
+          .primary-btn { padding: 18px 40px; font-size: 14px; }
+          .secondary-btn { padding: 14px 24px; }
+          .interview-q { padding: 12px 14px; font-size: 13px; }
+          .trait-item { font-size: 12px; }
+        }
       `}</style>
 
       {/* NAV BAR */}
       <div className="nav-bar">
-        <button className={`nav-link ${isAssessmentPhase ? "active" : ""}`} onClick={() => setPhase("intro")}>Assessment</button>
+        <button className={`nav-link ${isAssessmentPhase && phase !== "compare" && phase !== "compare-input" ? "active" : ""}`} onClick={() => setPhase("intro")}>Assessment</button>
         <button className={`nav-link ${phase === "archetypes" ? "active" : ""}`} onClick={() => navigateTo("archetypes")}>CoS Archetypes</button>
+        <button className={`nav-link ${phase === "compare-input" || phase === "compare" ? "active" : ""}`} onClick={() => { setCompareError(""); setPhase("compare-input"); }}>Compare</button>
         <button className={`nav-link ${phase === "about" ? "active" : ""}`} onClick={() => navigateTo("about")}>About</button>
       </div>
 
-      <div style={{ maxWidth: 620, margin: "0 auto", padding: "40px 32px", minHeight: "calc(100vh - 52px)" }}>
+      <div style={{ maxWidth: 620, margin: "0 auto", padding: "40px clamp(16px, 5vw, 32px)", minHeight: "calc(100vh - 52px)" }}>
 
         {/* ═══ INTRO ═══ */}
         {phase === "intro" && (
@@ -304,7 +521,7 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
               <p>Then, narrow in on the right profile and archetype.</p>
             </div>
             <div style={{ height: 48 }} />
-            <button className="primary-btn" onClick={() => { setStep(0); setPhase("phase1"); }}>Begin Assessment</button>
+            <button className="primary-btn" onClick={() => { trackEvent("start_assessment"); setStep(0); setPhase("phase1"); }}>Begin Assessment</button>
             <div style={{ marginTop: 24, fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#bbb" }}>~4 minutes</div>
 
             <div style={{ marginTop: 48, paddingTop: 32, borderTop: "1px solid #e4e0da", maxWidth: 440, margin: "48px auto 0" }}>
@@ -386,6 +603,18 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
                         <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 16, fontWeight: 500 }}>{type.compRange.frac}</div>
                       </div>
                     </div>
+
+                    {type.caseStudy && (
+                      <div className="case-study-card" style={{ borderLeftColor: type.color, borderLeftWidth: 3, borderLeftStyle: "solid" }}>
+                        <div className="section-label" style={{ color: type.color }}>Case study</div>
+                        <h4 style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>{type.caseStudy.title}</h4>
+                        <p style={{ fontSize: 14, lineHeight: 1.7, color: "#555", fontWeight: 300 }}>{type.caseStudy.summary}</p>
+                        <div className="section-label" style={{ marginTop: 16 }}>First 90 days</div>
+                        {type.caseStudy.first90.map((step, i) => (
+                          <div key={i} className="first90-step">{step}</div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -432,6 +661,25 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
                   <div className="section-label" style={{ marginBottom: 8 }}>Consider instead</div>
                   <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: "#555", lineHeight: 1.6 }}>A strong Executive Assistant or senior Program Manager might be a better fit right now. If things shift in 6 months, come back and retake this.</p>
                 </div>
+                {!nurtureSubmitted ? (
+                  <div className="nurture-card">
+                    <h3 style={{ fontSize: 18, fontWeight: 400, marginBottom: 6 }}>Things change fast.</h3>
+                    <p style={{ fontSize: 13, color: "#888", fontWeight: 300, lineHeight: 1.6, marginBottom: 20, fontFamily: "'DM Mono', monospace" }}>Leave your email and we'll check in with you in 6 months — or sooner if you want to revisit. No spam, just a nudge when the time might be right.</p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
+                      <input className="lead-input" type="text" placeholder="Your name (optional)" value={nurtureName} onChange={(e) => setNurtureName(e.target.value)} />
+                      <input className="lead-input" type="email" placeholder="Email address *" value={nurtureEmail} onChange={(e) => setNurtureEmail(e.target.value)} />
+                    </div>
+                    <button className="primary-btn" style={{ width: "100%", fontSize: 12 }} onClick={handleNurtureSubmit} disabled={!nurtureEmail.trim() || nurtureSubmitting}>
+                      {nurtureSubmitting ? "Sending\u2026" : "Remind Me Later \u2192"}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="success-card" style={{ marginBottom: 32 }}>
+                    <div style={{ fontSize: 28, marginBottom: 12 }}>{"\u2713"}</div>
+                    <h3 style={{ fontSize: 18, fontWeight: 400, marginBottom: 6 }}>We'll be in touch.</h3>
+                    <p style={{ fontSize: 13, color: "#666", fontWeight: 300, fontFamily: "'DM Mono', monospace" }}>We'll check in at <strong>{nurtureEmail}</strong> when it might be time to reassess.</p>
+                  </div>
+                )}
                 <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                   <button className="secondary-btn" onClick={restart}>Retake Assessment</button>
                   <button className="primary-btn" onClick={startPhase2} style={{ fontSize: 12 }}>I still want to explore types &rarr;</button>
@@ -549,6 +797,12 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
         {/* ═══ FINAL RESULT ═══ */}
         {phase === "final" && finalType && (
           <div className={fadeIn ? "fade-active" : "fade-enter"}>
+            {isSharedView && (
+              <div style={{ padding: 16, background: "#f0ede8", borderRadius: 6, marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+                <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: "#666", margin: 0 }}>You're viewing someone's shared assessment results.</p>
+                <button className="primary-btn" style={{ padding: "10px 20px", fontSize: 11 }} onClick={() => { window.location.hash = ""; setIsSharedView(false); restart(); }}>Take the Assessment Yourself &rarr;</button>
+              </div>
+            )}
             <div style={{ marginBottom: 8 }}><span className="result-tag" style={{ background: finalType.color }}>{finalType.icon} Your Archetype</span></div>
             <h2 style={{ fontSize: "clamp(28px, 4.5vw, 42px)", fontWeight: 400, lineHeight: 1.2, marginBottom: 8 }}>{finalType.title}</h2>
             <p style={{ fontSize: 19, color: "#888", fontStyle: "italic", fontWeight: 300, marginBottom: 20 }}>{finalType.tagline}</p>
@@ -568,75 +822,153 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
               <div className="section-label">What this person does</div>
               {finalType.whatTheyDo.map((item, i) => <div key={i} className="trait-item"><span style={{ color: finalType.color, fontSize: 14 }}>&diams;</span> {item}</div>)}
             </div>
-            <div style={{ marginBottom: 40 }}>
-              <div className="section-label">What to look for</div>
-              {finalType.whatToLookFor.map((item, i) => <div key={i} className="trait-item"><span style={{ color: finalType.color, fontSize: 16 }}>&rarr;</span> {item}</div>)}
-            </div>
-            <div style={{ marginBottom: 40 }}>
-              <div className="section-label">Interview questions to ask</div>
-              {finalType.interviewQs.map((q, i) => <div key={i} className="interview-q" style={{ borderLeftColor: finalType.color }}>{q}</div>)}
-            </div>
-            <div style={{ marginBottom: 40 }}>
-              <div className="section-label">Typical compensation range</div>
-              <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-                <div style={{ flex: 1, minWidth: 200, padding: 20, background: "#f7f5f2", borderRadius: 4 }}>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#999", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Full-Time</div>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 20, fontWeight: 500 }}>{finalType.compRange.ft}</div>
+
+            {/* ═══ SOFT GATE — Lead form before detailed blueprint ═══ */}
+            {!leadSubmitted && !isSharedView ? (
+              <>
+                {/* Blurred preview of gated content */}
+                <div className="gated-preview">
+                  <div className="gated-blur">
+                    <div style={{ marginBottom: 24 }}>
+                      <div className="section-label">What to look for</div>
+                      {finalType.whatToLookFor.slice(0, 3).map((item, i) => <div key={i} className="trait-item"><span style={{ color: finalType.color, fontSize: 16 }}>&rarr;</span> {item}</div>)}
+                    </div>
+                    <div style={{ marginBottom: 24 }}>
+                      <div className="section-label">Interview questions to ask</div>
+                      {finalType.interviewQs.slice(0, 2).map((q, i) => <div key={i} className="interview-q" style={{ borderLeftColor: finalType.color }}>{q}</div>)}
+                    </div>
+                    <div className="section-label">Compensation range</div>
+                    <div style={{ display: "flex", gap: 16 }}>
+                      <div style={{ flex: 1, padding: 16, background: "#f7f5f2", borderRadius: 4 }}>
+                        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 18, fontWeight: 500 }}>$XXX,XXX</div>
+                      </div>
+                      <div style={{ flex: 1, padding: 16, background: "#f7f5f2", borderRadius: 4 }}>
+                        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 18, fontWeight: 500 }}>$XX,XXX/mo</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ flex: 1, minWidth: 200, padding: 20, background: "#f7f5f2", borderRadius: 4 }}>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#999", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Fractional</div>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 20, fontWeight: 500 }}>{finalType.compRange.frac}</div>
+
+                {/* Gate overlay with lead form */}
+                <div className="gate-overlay">
+                  <div className="gate-card">
+                    <h3 style={{ fontSize: 20, fontWeight: 400, marginBottom: 6 }}>Unlock your full hiring blueprint</h3>
+                    <p style={{ fontSize: 13, color: "#888", fontWeight: 300, lineHeight: 1.6, marginBottom: 20, fontFamily: "'DM Mono', monospace" }}>
+                      Get the complete playbook — hiring traits, interview questions, compensation ranges, and a personalized job description template for your {finalType.title.toLowerCase()}.
+                    </p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
+                      <input className="lead-input" type="text" placeholder="Your name" value={leadName} onChange={(e) => setLeadName(e.target.value)} />
+                      <input className="lead-input" type="email" placeholder="Work email *" value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)} />
+                      <div style={{ display: "flex", gap: 10 }}>
+                        <input className="lead-input" type="text" placeholder="Company" value={leadCompany} onChange={(e) => setLeadCompany(e.target.value)} style={{ flex: 1 }} />
+                        <input className="lead-input" type="text" placeholder="Your role" value={leadRole} onChange={(e) => setLeadRole(e.target.value)} style={{ flex: 1 }} />
+                      </div>
+                      <select className="lead-input" value={leadCompanySize} onChange={(e) => setLeadCompanySize(e.target.value)} style={{ color: leadCompanySize ? "#1a1a1a" : "#bbb" }}>
+                        <option value="" disabled>Company size</option>
+                        <option value="1-25">1–25 employees</option>
+                        <option value="26-50">26–50 employees</option>
+                        <option value="51-200">51–200 employees</option>
+                        <option value="201-1000">201–1,000 employees</option>
+                        <option value="1000+">1,000+ employees</option>
+                      </select>
+                      <input className="lead-input" type="tel" placeholder="Phone (optional)" value={leadPhone} onChange={(e) => setLeadPhone(e.target.value)} />
+                    </div>
+                    <button className="primary-btn" style={{ width: "100%" }} onClick={handleLeadSubmit} disabled={!leadEmail.trim() || leadSubmitting}>
+                      {leadSubmitting ? "Sending\u2026" : "Unlock Full Blueprint \u2192"}
+                    </button>
+                    <p style={{ fontSize: 11, color: "#bbb", fontFamily: "'DM Mono', monospace", marginTop: 10, textAlign: "center" }}>No spam. We'll email you the full results too.</p>
+                  </div>
                 </div>
-              </div>
-            </div>
-
-            {secondaryType && (
-              <div style={{ padding: 20, background: secondaryType.accent, borderRadius: 4, borderLeft: `3px solid ${secondaryType.color}`, marginBottom: 20 }}>
-                <div className="section-label" style={{ color: secondaryType.color, marginBottom: 8 }}>Secondary signal: {secondaryType.title}</div>
-                <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: "#555", lineHeight: 1.6 }}>
-                  Your answers also showed strong signals for a {secondaryType.title.toLowerCase()}. The ideal candidate might blend both &mdash; someone who leads with {p2Result.primary} skills but can flex into {p2Result.secondary} work when needed.
-                </p>
-              </div>
-            )}
-
-            <div style={{ marginBottom: 32 }}>
-              <button className="secondary-btn" onClick={() => navigateTo("archetypes")} style={{ width: "100%" }}>
-                Learn more about other Chief of Staff archetypes &rarr;
-              </button>
-            </div>
-
-            <div style={{ marginBottom: 32 }}>
-              <button className="secondary-btn" onClick={downloadResults} style={{ width: "100%" }}>
-                Download your results as PDF &darr;
-              </button>
-            </div>
-
-            
-
-            <div className="divider">Stay Connected</div>
-            {!leadSubmitted ? (
-              <div style={{ border: "1.5px solid #d4d0ca", borderRadius: 6, padding: 32, marginBottom: 40, background: "linear-gradient(135deg, #fdfcfa 0%, #f7f5f2 100%)" }}>
-                <h3 style={{ fontSize: 20, fontWeight: 400, marginBottom: 8 }}>Want help finding your {finalType.title.split(" ").slice(0, -1).join(" ").toLowerCase()} CoS?</h3>
-                <p style={{ fontSize: 14, color: "#888", fontWeight: 300, lineHeight: 1.6, marginBottom: 24 }}>Leave your info and we'll send you a tailored job description template and &mdash; if you're going fractional &mdash; connect you with vetted candidates who match your profile.</p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
-                  <input className="lead-input" type="text" placeholder="Your name" value={leadName} onChange={(e) => setLeadName(e.target.value)} />
-                  <input className="lead-input" type="email" placeholder="Email address *" value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)} />
-                  <input className="lead-input" type="tel" placeholder="Phone (optional)" value={leadPhone} onChange={(e) => setLeadPhone(e.target.value)} />
-                </div>
-                <button className="primary-btn" style={{ width: "100%" }} onClick={handleLeadSubmit} disabled={!leadEmail.trim() || leadSubmitting}>
-                  {leadSubmitting ? "Sending\u2026" : "Get Connected \u2192"}
-                </button>
-                <p style={{ fontSize: 11, color: "#bbb", fontFamily: "'DM Mono', monospace", marginTop: 12, textAlign: "center" }}>No spam. Just your results and a personalized follow-up.</p>
-              </div>
+              </>
             ) : (
-              <div className="success-card" style={{ marginBottom: 40 }}>
-                <div style={{ fontSize: 28, marginBottom: 12 }}>{"\u2713"}</div>
-                <h3 style={{ fontSize: 20, fontWeight: 400, marginBottom: 8 }}>You're in.</h3>
-                <p style={{ fontSize: 14, color: "#666", fontWeight: 300, lineHeight: 1.6, fontFamily: "'DM Mono', monospace" }}>
-                  We'll send your tailored {finalType.title.toLowerCase()} blueprint to <strong>{leadEmail}</strong> shortly.
-                  {p1Result?.model === "fractional" && " We'll also reach out about fractional matches."}
-                </p>
-              </div>
+              <>
+                {/* ═══ UNLOCKED — Full blueprint ═══ */}
+                {leadSubmitted && !isSharedView && (
+                  <div className="success-card" style={{ marginBottom: 32 }}>
+                    <div style={{ fontSize: 28, marginBottom: 8 }}>{"\u2713"}</div>
+                    <h3 style={{ fontSize: 18, fontWeight: 400, marginBottom: 6 }}>Blueprint unlocked.</h3>
+                    <p style={{ fontSize: 13, color: "#666", fontWeight: 300, fontFamily: "'DM Mono', monospace" }}>
+                      Full results sent to <strong>{leadEmail}</strong>.
+                      {p1Result?.model === "fractional" && " We'll also reach out about fractional matches."}
+                    </p>
+                  </div>
+                )}
+
+                <div style={{ marginBottom: 40 }}>
+                  <div className="section-label">What to look for</div>
+                  {finalType.whatToLookFor.map((item, i) => <div key={i} className="trait-item"><span style={{ color: finalType.color, fontSize: 16 }}>&rarr;</span> {item}</div>)}
+                </div>
+                <div style={{ marginBottom: 40 }}>
+                  <div className="section-label">Interview questions to ask</div>
+                  {finalType.interviewQs.map((q, i) => <div key={i} className="interview-q" style={{ borderLeftColor: finalType.color }}>{q}</div>)}
+                </div>
+                <div style={{ marginBottom: 40 }}>
+                  <div className="section-label">Typical compensation range</div>
+                  <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+                    <div style={{ flex: 1, minWidth: 200, padding: 20, background: "#f7f5f2", borderRadius: 4 }}>
+                      <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#999", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Full-Time</div>
+                      <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 20, fontWeight: 500 }}>{finalType.compRange.ft}</div>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 200, padding: 20, background: "#f7f5f2", borderRadius: 4 }}>
+                      <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#999", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Fractional</div>
+                      <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 20, fontWeight: 500 }}>{finalType.compRange.frac}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {secondaryType && (
+                  <div style={{ padding: 20, background: secondaryType.accent, borderRadius: 4, borderLeft: `3px solid ${secondaryType.color}`, marginBottom: 20 }}>
+                    <div className="section-label" style={{ color: secondaryType.color, marginBottom: 8 }}>Secondary signal: {secondaryType.title}</div>
+                    <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: "#555", lineHeight: 1.6 }}>
+                      Your answers also showed strong signals for a {secondaryType.title.toLowerCase()}. The ideal candidate might blend both &mdash; someone who leads with {p2Result.primary} skills but can flex into {p2Result.secondary} work when needed.
+                    </p>
+                  </div>
+                )}
+
+                {/* ═══ BOOK A CALL — for high-intent leads ═══ */}
+                {leadSubmitted && p1Result?.totalScore >= 18 && (
+                  <div style={{ marginBottom: 32, padding: 24, background: "linear-gradient(135deg, #f7f9fb 0%, #f0f5fa 100%)", borderRadius: 6, border: "1.5px solid #c8d8e8" }}>
+                    <div className="section-label" style={{ color: "#2c5f8a", marginBottom: 6 }}>Ready to move forward?</div>
+                    <p style={{ fontSize: 14, color: "#555", fontWeight: 300, lineHeight: 1.6, marginBottom: 16 }}>Your complexity score is {p1Result.totalScore}/28 — that's high enough that this conversation usually saves leaders months of trial and error. Book a free 30-minute call to talk through your results and next steps.</p>
+                    <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer" className="book-call-btn" onClick={() => trackEvent("book_call_click")}>Book a Free Strategy Call &rarr;</a>
+                  </div>
+                )}
+
+                <div style={{ marginBottom: 32 }}>
+                  <button className="secondary-btn" onClick={() => navigateTo("archetypes")} style={{ width: "100%" }}>
+                    Learn more about other Chief of Staff archetypes &rarr;
+                  </button>
+                </div>
+
+                <div style={{ marginBottom: 32 }}>
+                  <button className="secondary-btn" onClick={() => { trackEvent("download_pdf"); downloadResults(); }} style={{ width: "100%" }}>
+                    Download your results as PDF &darr;
+                  </button>
+                </div>
+
+                {/* ═══ SHARE RESULTS ═══ */}
+                <div className="share-section">
+                  <h3 style={{ fontSize: 18, fontWeight: 400, marginBottom: 4 }}>Share your results</h3>
+                  <p style={{ fontSize: 13, color: "#888", fontWeight: 300, lineHeight: 1.6, fontFamily: "'DM Mono', monospace" }}>Send this link to your co-founder, board, or team — they'll see your full results without needing to take the assessment.</p>
+                  {!shareUrl ? (
+                    <button className="primary-btn" style={{ width: "100%", marginTop: 12, fontSize: 12 }} onClick={() => { trackEvent("generate_share_link"); generateShareUrl(); }}>Generate Shareable Link</button>
+                  ) : (
+                    <div className="share-url-box">
+                      <input className="share-url-input" type="text" value={shareUrl} readOnly onClick={(e) => e.target.select()} />
+                      <button className={`share-copy-btn ${shareCopied ? "copied" : ""}`} onClick={copyShareUrl}>{shareCopied ? "\u2713 Copied" : "Copy"}</button>
+                    </div>
+                  )}
+                </div>
+
+                {/* ═══ COMPARE PROMPT ═══ */}
+                {shareUrl && (
+                  <div style={{ padding: 20, background: "#f7f5f2", borderRadius: 6, marginBottom: 32, borderLeft: "3px solid #2c5f8a" }}>
+                    <div className="section-label" style={{ color: "#2c5f8a", marginBottom: 6 }}>Compare with a teammate</div>
+                    <p style={{ fontSize: 13, color: "#555", fontWeight: 300, lineHeight: 1.6, fontFamily: "'DM Mono', monospace", marginBottom: 12 }}>Have your co-founder or COO take the assessment too. Once you both have results, compare them side by side.</p>
+                    <button className="secondary-btn" style={{ width: "100%" }} onClick={() => { setCompareUrlA(shareUrl); setCompareUrlB(""); setCompareError(""); setPhase("compare-input"); }}>Compare Results &rarr;</button>
+                  </div>
+                )}
+              </>
             )}
 
             <div style={{ borderTop: "1px solid #eae7e2", paddingTop: 32, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
@@ -645,6 +977,138 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
             </div>
           </div>
         )}
+
+        {/* ═══ COMPARE INPUT ═══ */}
+        {phase === "compare-input" && (
+          <div className={fadeIn ? "fade-active" : "fade-enter"} style={{ display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "75vh" }}>
+            <h2 style={{ fontSize: "clamp(24px, 4vw, 34px)", fontWeight: 400, lineHeight: 1.2, marginBottom: 8 }}>Compare Your Results</h2>
+            <p style={{ fontSize: 16, lineHeight: 1.75, color: "#666", fontWeight: 300, marginBottom: 32 }}>
+              Taking this assessment with your board, co-founder, or executive team? You might each see different gaps — and that's valuable. Paste both results links below to see where you align and where you differ.
+            </p>
+
+            <div className={`compare-input-card ${extractResultCode(compareUrlA) ? "filled" : ""}`}>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "#999", marginBottom: 8 }}>Person 1 — Results Link</div>
+              <input
+                className="lead-input"
+                type="text"
+                placeholder="Paste first results link here..."
+                value={compareUrlA}
+                onChange={(e) => { setCompareUrlA(e.target.value); setCompareError(""); }}
+              />
+              {extractResultCode(compareUrlA) && (
+                <div style={{ marginTop: 8, fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#4a7c6f" }}>{"\u2713"} Valid results link detected</div>
+              )}
+            </div>
+
+            <div className={`compare-input-card ${extractResultCode(compareUrlB) ? "filled" : ""}`}>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "#999", marginBottom: 8 }}>Person 2 — Results Link</div>
+              <input
+                className="lead-input"
+                type="text"
+                placeholder="Paste second results link here..."
+                value={compareUrlB}
+                onChange={(e) => { setCompareUrlB(e.target.value); setCompareError(""); }}
+              />
+              {extractResultCode(compareUrlB) && (
+                <div style={{ marginTop: 8, fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#4a7c6f" }}>{"\u2713"} Valid results link detected</div>
+              )}
+            </div>
+
+            {compareError && <div className="compare-error">{compareError}</div>}
+
+            <button
+              className="primary-btn"
+              style={{ width: "100%", marginTop: 8 }}
+              onClick={handleCompare}
+              disabled={!compareUrlA.trim() || !compareUrlB.trim()}
+            >
+              Compare Side by Side &rarr;
+            </button>
+
+            <div style={{ marginTop: 32, padding: 20, background: "#f0ede8", borderRadius: 6 }}>
+              <div className="section-label" style={{ marginBottom: 8 }}>How it works</div>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: "#666", lineHeight: 1.8 }}>
+                <div style={{ marginBottom: 4 }}>1. Each person takes the assessment</div>
+                <div style={{ marginBottom: 4 }}>2. On the results page, click "Generate Shareable Link"</div>
+                <div style={{ marginBottom: 4 }}>3. Copy and send each link to whoever is coordinating</div>
+                <div>4. Paste both links above and compare</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ COMPARE VIEW ═══ */}
+        {phase === "compare" && compareData && (() => {
+          const typeA = COS_TYPES[compareData.a.p2Result.primary];
+          const typeB = COS_TYPES[compareData.b.p2Result.primary];
+          return (
+            <div className={fadeIn ? "fade-active" : "fade-enter"}>
+              <button className="back-btn" onClick={() => { setPhase("compare-input"); setCompareData(null); window.location.hash = ""; }} style={{ marginBottom: 24 }}>&larr; Back to Compare</button>
+              <h2 style={{ fontSize: "clamp(24px, 4vw, 34px)", fontWeight: 400, lineHeight: 1.2, marginBottom: 8 }}>Results Comparison</h2>
+              <p style={{ fontSize: 16, lineHeight: 1.75, color: "#666", fontWeight: 300, marginBottom: 32 }}>Side-by-side view of two assessment results. Use this to align on what kind of Chief of Staff your team needs.</p>
+
+              <div className="compare-grid">
+                {[compareData.a, compareData.b].map((d, idx) => {
+                  const cosType = COS_TYPES[d.p2Result.primary];
+                  return (
+                    <div key={idx} className="compare-col" style={{ borderTopColor: cosType.color, borderTopWidth: 3 }}>
+                      <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "#999", marginBottom: 8 }}>Person {idx + 1}</div>
+                      <span className="result-tag" style={{ background: cosType.color, marginBottom: 12 }}>{cosType.icon} {cosType.title.replace(" Chief of Staff", "")}</span>
+                      <h3 style={{ fontSize: 20, fontWeight: 400, marginTop: 12, marginBottom: 4 }}>{cosType.title}</h3>
+                      <p style={{ fontSize: 14, color: "#888", fontStyle: "italic", fontWeight: 300, marginBottom: 16 }}>{cosType.tagline}</p>
+
+                      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                        <div style={{ flex: 1, padding: 12, background: "#f7f5f2", borderRadius: 4, textAlign: "center" }}>
+                          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 18, fontWeight: 500 }}>{d.p1Result.totalScore}/28</div>
+                          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: "#999", textTransform: "uppercase", letterSpacing: "0.1em" }}>Score</div>
+                        </div>
+                        <div style={{ flex: 1, padding: 12, background: "#f7f5f2", borderRadius: 4, textAlign: "center" }}>
+                          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 14, fontWeight: 500 }}>{d.p1Result.need === "yes" ? (d.p1Result.model === "fractional" ? "Fractional" : "Full-Time") : "Not yet"}</div>
+                          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: "#999", textTransform: "uppercase", letterSpacing: "0.1em" }}>Model</div>
+                        </div>
+                      </div>
+
+                      {d.p2Result.secondary && (
+                        <p style={{ fontSize: 12, color: "#888", fontFamily: "'DM Mono', monospace", marginBottom: 12 }}>Secondary: {COS_TYPES[d.p2Result.secondary]?.title || "—"}</p>
+                      )}
+
+                      <div className="section-label" style={{ marginTop: 12 }}>Top priorities</div>
+                      {cosType.whatTheyDo.slice(0, 3).map((item, i) => (
+                        <div key={i} style={{ padding: "6px 0", fontSize: 12, color: "#555", fontFamily: "'DM Mono', monospace", borderBottom: "1px solid #eee" }}>{"\u25C6"} {item}</div>
+                      ))}
+
+                      {d.writeIns?.day_one && (
+                        <div style={{ marginTop: 12 }}>
+                          <div className="section-label">Day 1 priority</div>
+                          <p style={{ fontSize: 13, color: "#555", fontWeight: 300, lineHeight: 1.5 }}>{d.writeIns.day_one}</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {typeA && typeB && (
+                <div style={{ padding: 20, background: "#f0ede8", borderRadius: 6, marginBottom: 32 }}>
+                  <div className="section-label" style={{ marginBottom: 8 }}>Alignment summary</div>
+                  {compareData.a.p2Result.primary === compareData.b.p2Result.primary ? (
+                    <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: "#444", lineHeight: 1.6 }}>You're aligned — both results point to a <strong>{typeA.title}</strong>. That's a strong signal. Start your search there.</p>
+                  ) : (
+                    <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: "#444", lineHeight: 1.6 }}>You see different needs — one leans <strong>{typeA.title.replace(" Chief of Staff", "")}</strong>, the other <strong>{typeB.title.replace(" Chief of Staff", "")}</strong>. The ideal candidate might blend both archetypes. That's common, and actually narrows your search in a useful way.</p>
+                  )}
+                  {compareData.a.p1Result.model !== compareData.b.p1Result.model && compareData.a.p1Result.need === "yes" && compareData.b.p1Result.need === "yes" && (
+                    <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: "#888", lineHeight: 1.6, marginTop: 8 }}>Note: you also differ on engagement model (fractional vs. full-time). Worth discussing before you start hiring.</p>
+                  )}
+                </div>
+              )}
+
+              <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+                <button className="secondary-btn" onClick={() => { setPhase("compare-input"); setCompareData(null); window.location.hash = ""; }}>Compare Different Results</button>
+                <button className="primary-btn" onClick={() => { setPhase("intro"); setCompareData(null); window.location.hash = ""; }}>Take the Assessment</button>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
