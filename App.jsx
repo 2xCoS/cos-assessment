@@ -11,9 +11,9 @@ function trackEvent(name, data = {}) {
 }
 
 // ═══ SHAREABLE RESULTS ═══
-function encodeResults(p1Answers, p2Answers, writeInAnswers) {
+function encodeResults(p1Answers, p2Answers, writeInAnswers, contextAnswers) {
   try {
-    const data = { p1: p1Answers, p2: p2Answers, w: writeInAnswers };
+    const data = { p1: p1Answers, p2: p2Answers, w: writeInAnswers, c: contextAnswers || {} };
     return btoa(JSON.stringify(data)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   } catch { return null; }
 }
@@ -39,6 +39,13 @@ function extractResultCode(input) {
   return null;
 }
 
+// ═══ CONTEXT QUESTIONS (before Part 1) ═══
+const CONTEXT_QUESTIONS = [
+  { id: "has_ea", question: "Do you currently have an Executive Assistant?", subtext: "Someone managing your calendar, email, and day-to-day logistics", options: [{ label: "Yes, and they're great", value: "yes_good", icon: "✓" },{ label: "Yes, but I've outgrown them", value: "yes_outgrown", icon: "△" },{ label: "No", value: "no", icon: "—" }] },
+  { id: "has_coo", question: "Do you have a COO or someone in an operational leadership role?", subtext: "Someone already owning internal operations, processes, or team cadence", options: [{ label: "Yes", value: "yes", icon: "✓" },{ label: "No, and I feel it", value: "no_feel", icon: "✕" },{ label: "No, but it's fine for now", value: "no_fine", icon: "—" }] },
+  { id: "driver", question: "What's driving you to take this assessment?", subtext: "There's no wrong answer — this helps us tailor your results", options: [{ label: "We're fundraising or preparing for a board change", value: "fundraising", icon: "◇" },{ label: "We're scaling fast and things are breaking", value: "scaling", icon: "◇" },{ label: "I just lost a key exec or my org is restructuring", value: "transition", icon: "◇" },{ label: "I keep hearing about Chiefs of Staff and I'm curious", value: "exploring", icon: "◇" },{ label: "Someone told me to take this", value: "referred", icon: "◇" }] },
+];
+
 const PHASE1_QUESTIONS = [
   { id: "reports", question: "How many people report directly to you?", subtext: "Include anyone who has a recurring 1:1 with you", options: [{ label: "1\u20134", value: 1, icon: "\u25CB" },{ label: "5\u20138", value: 2, icon: "\u25CB\u25CB" },{ label: "9\u201312", value: 3, icon: "\u25CB\u25CB\u25CB" },{ label: "13+", value: 4, icon: "\u25CB\u25CB\u25CB\u25CB" }] },
   { id: "bottleneck", question: "How often are you the bottleneck on decisions?", subtext: "Things that can\u2019t move forward without your input", options: [{ label: "Rarely", value: 1, icon: "\u25C7" },{ label: "Sometimes", value: 2, icon: "\u25C7\u25C7" },{ label: "Often", value: 3, icon: "\u25C7\u25C7\u25C7" },{ label: "Constantly", value: 4, icon: "\u25C7\u25C7\u25C7\u25C7" }] },
@@ -46,7 +53,7 @@ const PHASE1_QUESTIONS = [
   { id: "meetings", question: "How many hours per week are you in meetings?", subtext: "All meetings \u2014 1:1s, team syncs, external calls", options: [{ label: "Under 15", value: 1, icon: "\u25A1" },{ label: "15\u201325", value: 2, icon: "\u25A1\u25A1" },{ label: "25\u201335", value: 3, icon: "\u25A1\u25A1\u25A1" },{ label: "35+", value: 4, icon: "\u25A1\u25A1\u25A1\u25A1" }] },
   { id: "crossfunc", question: "How often do cross-functional initiatives stall or misalign?", subtext: "Projects that span multiple teams or departments", options: [{ label: "Rarely", value: 1, icon: "\u25B3" },{ label: "Occasionally", value: 2, icon: "\u25B3\u25B3" },{ label: "Frequently", value: 3, icon: "\u25B3\u25B3\u25B3" },{ label: "It's chaos", value: 4, icon: "\u25B3\u25B3\u25B3\u25B3" }] },
   { id: "delegate", question: "Is there someone who can represent you in a room?", subtext: "Someone who knows your thinking well enough to act on your behalf", options: [{ label: "Yes, reliably", value: 1, icon: "\u25CF" },{ label: "Sort of", value: 2, icon: "\u25CF\u25CB" },{ label: "Not really", value: 3, icon: "\u25CB\u25CF" },{ label: "Absolutely not", value: 4, icon: "\u25CB" }] },
-  { id: "stage", question: "What stage is your organization?", subtext: "Roughly \u2014 where things feel right now", options: [{ label: "Early (under 50)", value: 1, icon: "\u22A1" },{ label: "Growth (50\u2013200)", value: 2, icon: "\u22A1\u22A1" },{ label: "Scale (200\u20131000)", value: 3, icon: "\u22A1\u22A1\u22A1" },{ label: "Enterprise (1000+)", value: 4, icon: "\u22A1\u22A1\u22A1\u22A1" }] },
+  { id: "stage", question: "How many employees are in your organization?", subtext: "Full-time or full-time equivalent", options: [{ label: "1\u201320", value: 1, icon: "\u22A1" },{ label: "21\u201350", value: 1, icon: "\u22A1" },{ label: "51\u2013100", value: 2, icon: "\u22A1\u22A1" },{ label: "101\u2013250", value: 2, icon: "\u22A1\u22A1" },{ label: "251\u20131,000", value: 3, icon: "\u22A1\u22A1\u22A1" },{ label: "1,000+", value: 4, icon: "\u22A1\u22A1\u22A1\u22A1" }] },
   { id: "duration", question: "How long do you anticipate needing this support?", subtext: "Think about whether this is a season or a permanent shift", options: [{ label: "A specific initiative (3\u20136 months)", value: "project", icon: "\u29D6" },{ label: "A transition period (6\u201312 months)", value: "transition", icon: "\u29D7" },{ label: "Ongoing, but not ready for a full hire", value: "fractional", icon: "\u25D0" },{ label: "Permanently \u2014 this is a core role", value: "permanent", icon: "\u25CF" }] },
   { id: "budget", question: "What's your realistic budget for this role?", subtext: "Be honest \u2014 it shapes the recommendation", options: [{ label: "Under $80K / year", value: "low", icon: "$" },{ label: "$80K\u2013$150K / year", value: "mid", icon: "$$" },{ label: "$150K\u2013$250K / year", value: "high", icon: "$$$" },{ label: "$250K+ / year", value: "top", icon: "$$$$" }] },
 ];
@@ -107,11 +114,18 @@ const COS_TYPES = {
   },
 };
 
-function getPhase1Result(answers) {
+function getPhase1Result(answers, context) {
+  const ctx = context || {};
   const ids = ["reports","bottleneck","strategic","meetings","crossfunc","delegate","stage"];
-  const totalScore = ids.reduce((s, id) => s + (answers[id] || 0), 0);
+  let totalScore = ids.reduce((s, id) => s + (answers[id] || 0), 0);
+  
+  // Context adjustments
+  if (ctx.has_ea === "yes_good") totalScore = Math.max(totalScore - 1, 7); // EA handles some load
+  if (ctx.has_ea === "yes_outgrown") totalScore += 1; // Outgrown EA = more need
+  if (ctx.has_coo === "no_feel") totalScore += 1; // No COO and feeling it
+  
   const duration = answers["duration"], budget = answers["budget"], stage = answers["stage"] || 0;
-  if (totalScore <= 12) return { need: "none", totalScore };
+  if (totalScore <= 12) return { need: "none", totalScore, driver: ctx.driver || null };
   const f = [], ft = [];
   if (duration === "project") f.push("You're solving for a specific initiative, not an ongoing gap");
   if (duration === "transition") f.push("You need this through a transition \u2014 fractional gives flexibility to reassess");
@@ -125,17 +139,33 @@ function getPhase1Result(answers) {
   if (stage >= 3 && totalScore >= 22) ft.push("At your scale and complexity, you need someone embedded full-time");
   if (totalScore <= 18) f.push("Your complexity score suggests part-time support could close the gap");
   if (totalScore >= 23) ft.push("Your organizational complexity calls for a dedicated, full-time presence");
+  
+  // Context-driven signals
+  if (ctx.has_ea === "yes_outgrown") ft.push("You've outgrown your EA \u2014 you need a strategic upgrade, not more admin support");
+  if (ctx.has_coo === "no_feel") ft.push("Without a COO, the operational load falls on you \u2014 a CoS can bridge that gap");
+  if (ctx.driver === "fundraising") f.push("Fundraising is a defined period \u2014 fractional support can cover the sprint");
+  if (ctx.driver === "scaling") ft.push("Scaling challenges tend to persist \u2014 a CoS embedded in the rhythm helps more");
+  
   const isFrac = f.length > ft.length, isDef = Math.abs(f.length - ft.length) >= 2;
-  return { need: "yes", totalScore, model: isFrac ? "fractional" : "fulltime", strength: isDef ? "strong" : "lean",
+  return { need: "yes", totalScore, driver: ctx.driver || null, model: isFrac ? "fractional" : "fulltime", strength: isDef ? "strong" : "lean",
     modelTitle: isFrac ? (isDef ? "Fractional Chief of Staff" : "Likely Fractional") : (isDef ? "Full-Time Chief of Staff" : "Likely Full-Time"),
     modelSubtitle: isFrac ? (isDef ? "You don't need someone five days a week \u2014 you need the right person two or three days a week." : "The signals lean fractional, though full-time could work too.") : (isDef ? "You need someone fully embedded in your operating rhythm." : "The signals lean full-time, though you could start fractional and convert."),
     signals: isFrac ? f : ft, counterSignals: isFrac ? ft : f,
+    context: ctx,
   };
 }
 
-function getPhase2Result(answers) {
+function getPhase2Result(answers, context) {
+  const ctx = context || {};
   const tally = { strategic: 0, operational: 0, external: 0, growth: 0 };
   PHASE2_MC_QUESTIONS.forEach((q) => { const v = answers[q.id]; if (v && tally[v] !== undefined) tally[v]++; });
+  
+  // Context-driven archetype nudges
+  if (ctx.driver === "fundraising") tally.external += 0.5;
+  if (ctx.driver === "scaling") tally.growth += 0.5;
+  if (ctx.driver === "transition") tally.growth += 0.5;
+  if (ctx.has_coo === "yes") tally.operational = Math.max(tally.operational - 0.5, 0); // Already have ops coverage
+  
   const sorted = Object.entries(tally).sort((a, b) => b[1] - a[1]);
   return { primary: sorted[0][0], secondary: sorted[1][1] > 0 ? sorted[1][0] : null, tally };
 }
@@ -154,6 +184,7 @@ export default function ChiefOfStaffAssessment() {
   const [step, setStep] = useState(0);
   const [p1Answers, setP1Answers] = useState({});
   const [p2Answers, setP2Answers] = useState({});
+  const [contextAnswers, setContextAnswers] = useState({});
   const [otherTexts, setOtherTexts] = useState({});
   const [writeInAnswers, setWriteInAnswers] = useState({});
   const [selected, setSelected] = useState(null);
@@ -191,11 +222,11 @@ export default function ChiefOfStaffAssessment() {
     if (phase === "intro" || phase === "about" || phase === "archetypes" || phase === "compare-input" || phase === "compare") return;
     try {
       localStorage.setItem("cos_progress", JSON.stringify({
-        phase, step, p1Answers, p2Answers, otherTexts, writeInAnswers,
+        phase, step, p1Answers, p2Answers, contextAnswers, otherTexts, writeInAnswers,
         p1Result, p2Result, writeInValue
       }));
     } catch {}
-  }, [phase, step, p1Answers, p2Answers, otherTexts, writeInAnswers, p1Result, p2Result, writeInValue]);
+  }, [phase, step, p1Answers, p2Answers, contextAnswers, otherTexts, writeInAnswers, p1Result, p2Result, writeInValue]);
 
   // ═══ PARSE URL HASH OR RESTORE SESSION ON MOUNT ═══
   useEffect(() => {
@@ -207,8 +238,9 @@ export default function ChiefOfStaffAssessment() {
         setP1Answers(decoded.p1);
         setP2Answers(decoded.p2);
         if (decoded.w) setWriteInAnswers(decoded.w);
-        const r1 = getPhase1Result(decoded.p1);
-        const r2 = getPhase2Result(decoded.p2);
+        if (decoded.c) setContextAnswers(decoded.c);
+        const r1 = getPhase1Result(decoded.p1, decoded.c || {});
+        const r2 = getPhase2Result(decoded.p2, decoded.c || {});
         setP1Result(r1);
         setP2Result(r2);
         setIsSharedView(true);
@@ -220,8 +252,8 @@ export default function ChiefOfStaffAssessment() {
         const d1 = decodeResults(parts[0]);
         const d2 = decodeResults(parts[1]);
         if (d1 && d2) {
-          const r1a = getPhase1Result(d1.p1), r2a = getPhase2Result(d1.p2);
-          const r1b = getPhase1Result(d2.p1), r2b = getPhase2Result(d2.p2);
+          const r1a = getPhase1Result(d1.p1, d1.c || {}), r2a = getPhase2Result(d1.p2, d1.c || {});
+          const r1b = getPhase1Result(d2.p1, d2.c || {}), r2b = getPhase2Result(d2.p2, d2.c || {});
           setCompareData({
             a: { p1Result: r1a, p2Result: r2a, writeIns: d1.w || {} },
             b: { p1Result: r1b, p2Result: r2b, writeIns: d2.w || {} },
@@ -239,6 +271,7 @@ export default function ChiefOfStaffAssessment() {
             setPhase(s.phase); setStep(s.step || 0);
             if (s.p1Answers) setP1Answers(s.p1Answers);
             if (s.p2Answers) setP2Answers(s.p2Answers);
+            if (s.contextAnswers) setContextAnswers(s.contextAnswers);
             if (s.otherTexts) setOtherTexts(s.otherTexts);
             if (s.writeInAnswers) setWriteInAnswers(s.writeInAnswers);
             if (s.p1Result) setP1Result(s.p1Result);
@@ -256,7 +289,12 @@ export default function ChiefOfStaffAssessment() {
   const handleP1Select = (qId, value) => {
     setSelected(value);
     const na = { ...p1Answers, [qId]: value }; setP1Answers(na);
-    setTimeout(() => { setSelected(null); if (step + 1 < PHASE1_QUESTIONS.length) setStep(step + 1); else { const result = getPhase1Result(na); setP1Result(result); trackEvent("p1_complete", { score: result.totalScore, need: result.need }); setPhase("phase1result"); } }, 350);
+    setTimeout(() => { setSelected(null); if (step + 1 < PHASE1_QUESTIONS.length) setStep(step + 1); else { const result = getPhase1Result(na, contextAnswers); setP1Result(result); trackEvent("p1_complete", { score: result.totalScore, need: result.need }); setPhase("phase1result"); } }, 350);
+  };
+  const handleContextSelect = (qId, value) => {
+    setSelected(value);
+    const na = { ...contextAnswers, [qId]: value }; setContextAnswers(na);
+    setTimeout(() => { setSelected(null); if (step + 1 < CONTEXT_QUESTIONS.length) setStep(step + 1); else { setStep(0); trackEvent("context_complete"); setPhase("phase1"); } }, 350);
   };
   const handleP2MCSelect = (qId, value) => {
     setSelected(value); setShowOtherInput(false); setOtherValue("");
@@ -275,15 +313,15 @@ export default function ChiefOfStaffAssessment() {
   const handleWriteInNext = () => {
     if (writeInValue.trim()) setWriteInAnswers((p) => ({ ...p, [currentWriteIn.id]: writeInValue.trim() }));
     if (step + 1 < PHASE2_WRITEIN_QUESTIONS.length) { setStep(step + 1); setWriteInValue(""); }
-    else { const result = getPhase2Result(p2Answers); setP2Result(result); trackEvent("p2_complete", { archetype: result.primary }); setPhase("final"); }
+    else { const result = getPhase2Result(p2Answers, contextAnswers); setP2Result(result); trackEvent("p2_complete", { archetype: result.primary }); setPhase("final"); }
   };
   const handleWriteInSkip = () => {
     if (step + 1 < PHASE2_WRITEIN_QUESTIONS.length) { setStep(step + 1); setWriteInValue(""); }
-    else { const result = getPhase2Result(p2Answers); setP2Result(result); trackEvent("p2_complete", { archetype: result.primary }); setPhase("final"); }
+    else { const result = getPhase2Result(p2Answers, contextAnswers); setP2Result(result); trackEvent("p2_complete", { archetype: result.primary }); setPhase("final"); }
   };
   const goBack = () => { if (step > 0) { setSelected(null); setShowOtherInput(false); setOtherValue(""); setWriteInValue(""); setStep(step - 1); } };
   const restart = () => {
-    setPhase("intro"); setStep(0); setP1Answers({}); setP2Answers({}); setOtherTexts({}); setWriteInAnswers({});
+    setPhase("intro"); setStep(0); setP1Answers({}); setP2Answers({}); setContextAnswers({}); setOtherTexts({}); setWriteInAnswers({});
     setP1Result(null); setP2Result(null); setSelected(null); setLeadName(""); setLeadEmail(""); setLeadPhone("");
     setLeadSubmitted(false); setShowOtherInput(false); setOtherValue(""); setWriteInValue("");
     setLeadCompany(""); setLeadRole(""); setLeadCompanySize(""); setShareUrl(""); setShareCopied(false);
@@ -295,7 +333,7 @@ export default function ChiefOfStaffAssessment() {
     if (!leadEmail.trim()) return;
     setLeadSubmitting(true);
     trackEvent("lead_submit", { archetype: p2Result?.primary, model: p1Result?.model });
-    submitToSheets({ name: leadName.trim(), email: leadEmail.trim(), phone: leadPhone.trim(), company: leadCompany.trim(), role: leadRole.trim(), companySize: leadCompanySize.trim(), complexityScore: p1Result?.totalScore || null, engagementModel: p1Result?.need === "yes" ? p1Result.modelTitle : "No CoS needed", budget: p1Answers?.budget || null, archetype: p2Result ? COS_TYPES[p2Result.primary]?.title : null, secondaryArchetype: p2Result?.secondary ? COS_TYPES[p2Result.secondary]?.title : null, dayOne: writeInAnswers.day_one || "", dayThirty: writeInAnswers.day_thirty || "", source: "editorial", sendEmail: true, shareUrl: generateShareUrl() || "", answers: { phase1: p1Answers, phase2: p2Answers, otherResponses: otherTexts, writeIns: writeInAnswers } });
+    submitToSheets({ name: leadName.trim(), email: leadEmail.trim(), phone: leadPhone.trim(), company: leadCompany.trim(), role: leadRole.trim(), companySize: leadCompanySize.trim(), complexityScore: p1Result?.totalScore || null, engagementModel: p1Result?.need === "yes" ? p1Result.modelTitle : "No CoS needed", budget: p1Answers?.budget || null, archetype: p2Result ? COS_TYPES[p2Result.primary]?.title : null, secondaryArchetype: p2Result?.secondary ? COS_TYPES[p2Result.secondary]?.title : null, dayOne: writeInAnswers.day_one || "", dayThirty: writeInAnswers.day_thirty || "", hasEA: contextAnswers.has_ea || "", hasCOO: contextAnswers.has_coo || "", driver: contextAnswers.driver || "", source: "editorial", sendEmail: true, shareUrl: generateShareUrl() || "", answers: { context: contextAnswers, phase1: p1Answers, phase2: p2Answers, otherResponses: otherTexts, writeIns: writeInAnswers } });
     setLeadSubmitted(true); setLeadSubmitting(false);
     try { localStorage.removeItem("cos_progress"); } catch {}
   };
@@ -304,7 +342,7 @@ export default function ChiefOfStaffAssessment() {
 
   // ═══ SHARE RESULTS ═══
   const generateShareUrl = () => {
-    const code = encodeResults(p1Answers, p2Answers, writeInAnswers);
+    const code = encodeResults(p1Answers, p2Answers, writeInAnswers, contextAnswers);
     if (code) {
       const url = `${window.location.origin}${window.location.pathname}#r=${code}`;
       setShareUrl(url);
@@ -332,8 +370,8 @@ export default function ChiefOfStaffAssessment() {
     const d2 = decodeResults(codeB);
     if (!d1) { setCompareError("Couldn't read the first results link. Make sure it's a valid shareable link."); return; }
     if (!d2) { setCompareError("Couldn't read the second results link. Make sure it's a valid shareable link."); return; }
-    const r1a = getPhase1Result(d1.p1), r2a = getPhase2Result(d1.p2);
-    const r1b = getPhase1Result(d2.p1), r2b = getPhase2Result(d2.p2);
+    const r1a = getPhase1Result(d1.p1, d1.c || {}), r2a = getPhase2Result(d1.p2, d1.c || {});
+    const r1b = getPhase1Result(d2.p1, d2.c || {}), r2b = getPhase2Result(d2.p2, d2.c || {});
     setCompareData({
       a: { p1Result: r1a, p2Result: r2a, writeIns: d1.w || {} },
       b: { p1Result: r1b, p2Result: r2b, writeIns: d2.w || {} },
@@ -401,7 +439,7 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
   const totalP2Steps = PHASE2_MC_QUESTIONS.length + PHASE2_WRITEIN_QUESTIONS.length;
   const currentP2Step = phase === "phase2mc" ? step : phase === "phase2writein" ? PHASE2_MC_QUESTIONS.length + step : 0;
 
-  const isAssessmentPhase = ["intro","phase1","phase1result","phase2intro","phase2mc","phase2writein","final","compare","compare-input"].includes(phase);
+  const isAssessmentPhase = ["intro","context","phase1","phase1result","phase2intro","phase2mc","phase2writein","final","compare","compare-input"].includes(phase);
 
   return (
     <div style={{ minHeight: "100vh", background: "#faf8f5", fontFamily: "'Newsreader', 'Georgia', serif", color: "#1a1a1a", position: "relative" }}>
@@ -518,14 +556,34 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
               <p>Then, narrow in on the right profile and archetype.</p>
             </div>
             <div style={{ height: 48 }} />
-            <button className="primary-btn" onClick={() => { trackEvent("start_assessment"); setStep(0); setPhase("phase1"); }}>Begin Assessment</button>
-            <div style={{ marginTop: 24, fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#bbb" }}>~4 minutes</div>
+            <button className="primary-btn" onClick={() => { trackEvent("start_assessment"); setStep(0); setPhase("context"); }}>Begin Assessment</button>
+            <div style={{ marginTop: 24, fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#bbb" }}>~5 minutes</div>
 
             <div style={{ marginTop: 48, paddingTop: 32, borderTop: "1px solid #e4e0da", maxWidth: 440, margin: "48px auto 0" }}>
               <p style={{ fontSize: 14, lineHeight: 1.7, color: "#888", fontWeight: 300 }}>
                 Built by <a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer" style={{ color: "#2c5f8a", textDecoration: "none", fontWeight: 500, borderBottom: "1px solid #2c5f8a33" }}>Elliott Fisher</a>, a 2x Chief of Staff.
               </p>
             </div>
+          </div>
+        )}
+
+        {/* ═══ CONTEXT QUESTIONS ═══ */}
+        {phase === "context" && (
+          <div className={fadeIn ? "fade-active" : "fade-enter"} style={{ display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "75vh" }}>
+            <div style={{ display: "flex", gap: 4, marginBottom: 48 }}>
+              {CONTEXT_QUESTIONS.map((_, i) => <div key={i} className={`progress-segment ${i <= step ? "filled" : ""}`} />)}
+            </div>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "#999", marginBottom: 12 }}>Quick context &middot; {step + 1} of {CONTEXT_QUESTIONS.length}</div>
+            <h2 style={{ fontSize: "clamp(22px, 3.5vw, 30px)", fontWeight: 400, lineHeight: 1.3, marginBottom: 8 }}>{CONTEXT_QUESTIONS[step].question}</h2>
+            <p style={{ fontSize: 14, color: "#888", marginBottom: 36, fontWeight: 300, fontStyle: "italic" }}>{CONTEXT_QUESTIONS[step].subtext}</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {CONTEXT_QUESTIONS[step].options.map((opt) => (
+                <button key={opt.label} className={`option-btn ${selected === opt.value ? "selected" : ""}`} onClick={() => handleContextSelect(CONTEXT_QUESTIONS[step].id, opt.value)}>
+                  <span style={{ opacity: 0.4, fontSize: 12, minWidth: 48 }}>{opt.icon}</span>{opt.label}
+                </button>
+              ))}
+            </div>
+            {step > 0 && <div style={{ marginTop: 32 }}><button className="back-btn" onClick={goBack}>&larr; Back</button></div>}
           </div>
         )}
 
@@ -809,6 +867,16 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
                 <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 14, color: "#444", lineHeight: 1.6, margin: 0 }}>
                   Our recommendation: You need a <strong>{p1Result.model === "fractional" ? "fractional" : "full-time"} {finalType.title}</strong>.
                   {p1Result.model === "fractional" ? " That means the right person 2\u20133 days a week \u2014 not a full-time hire." : " This person should be fully embedded in your team."}
+                </p>
+              </div>
+            )}
+
+            {p1Result?.driver && p1Result.driver !== "exploring" && p1Result.driver !== "referred" && (
+              <div style={{ padding: 14, background: "#f0ede8", borderRadius: 4, marginBottom: 24 }}>
+                <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: "#555", lineHeight: 1.6, margin: 0 }}>
+                  {p1Result.driver === "fundraising" && "Since you're fundraising or navigating a board change, look for someone who can own investor communications and board prep from day one. That's a high-trust, high-stakes handoff — prioritize executive presence."}
+                  {p1Result.driver === "scaling" && "You're scaling fast and things are breaking. The right CoS will bring structure without slowing you down — expect them to diagnose the top 3 bottlenecks in week one and start fixing them by week three."}
+                  {p1Result.driver === "transition" && "Org transitions are high-stakes moments. Your CoS should have change management instincts — someone who can stabilize the team while you navigate the shift at the top."}
                 </p>
               </div>
             )}
