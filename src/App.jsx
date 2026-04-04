@@ -53,7 +53,7 @@ const PHASE1_QUESTIONS = [
   { id: "meetings", question: "How many hours per week are you in meetings?", subtext: "All meetings \u2014 1:1s, team syncs, external calls", options: [{ label: "Under 15", value: 1, icon: "\u25A1" },{ label: "15\u201325", value: 2, icon: "\u25A1\u25A1" },{ label: "25\u201335", value: 3, icon: "\u25A1\u25A1\u25A1" },{ label: "35+", value: 4, icon: "\u25A1\u25A1\u25A1\u25A1" }] },
   { id: "crossfunc", question: "How often do cross-functional initiatives stall or misalign?", subtext: "Projects that span multiple teams or departments", options: [{ label: "Rarely", value: 1, icon: "\u25B3" },{ label: "Occasionally", value: 2, icon: "\u25B3\u25B3" },{ label: "Frequently", value: 3, icon: "\u25B3\u25B3\u25B3" },{ label: "It's chaos", value: 4, icon: "\u25B3\u25B3\u25B3\u25B3" }] },
   { id: "delegate", question: "Is there someone who can represent you in a room?", subtext: "Someone who knows your thinking well enough to act on your behalf", options: [{ label: "Yes, reliably", value: 1, icon: "\u25CF" },{ label: "Sort of", value: 2, icon: "\u25CF\u25CB" },{ label: "Not really", value: 3, icon: "\u25CB\u25CF" },{ label: "Absolutely not", value: 4, icon: "\u25CB" }] },
-  { id: "stage", question: "How many employees are in your organization?", subtext: "Full-time or full-time equivalent", options: [{ label: "1\u201320", value: 1, icon: "\u22A1" },{ label: "21\u201350", value: 1, icon: "\u22A1" },{ label: "51\u2013100", value: 2, icon: "\u22A1\u22A1" },{ label: "101\u2013250", value: 2, icon: "\u22A1\u22A1" },{ label: "251\u20131,000", value: 3, icon: "\u22A1\u22A1\u22A1" },{ label: "1,000+", value: 4, icon: "\u22A1\u22A1\u22A1\u22A1" }] },
+  { id: "stage", question: "How many employees are in your organization?", subtext: "Full-time or full-time equivalent", options: [{ label: "1\u201320", value: 1, icon: "\u22A1" },{ label: "21\u201350", value: 1.5, icon: "\u22A1" },{ label: "51\u2013100", value: 2, icon: "\u22A1\u22A1" },{ label: "101\u2013250", value: 2.5, icon: "\u22A1\u22A1" },{ label: "251\u20131,000", value: 3, icon: "\u22A1\u22A1\u22A1" },{ label: "1,000+", value: 4, icon: "\u22A1\u22A1\u22A1\u22A1" }] },
   { id: "duration", question: "How long do you anticipate needing this support?", subtext: "Think about whether this is a season or a permanent shift", options: [{ label: "A specific initiative (3\u20136 months)", value: "project", icon: "\u29D6" },{ label: "A transition period (6\u201312 months)", value: "transition", icon: "\u29D7" },{ label: "Ongoing, but not ready for a full hire", value: "fractional", icon: "\u25D0" },{ label: "Permanently \u2014 this is a core role", value: "permanent", icon: "\u25CF" }] },
   { id: "budget", question: "What's your realistic budget for this role?", subtext: "Be honest \u2014 it shapes the recommendation", options: [{ label: "Under $80K / year", value: "low", icon: "$" },{ label: "$80K\u2013$150K / year", value: "mid", icon: "$$" },{ label: "$150K\u2013$250K / year", value: "high", icon: "$$$" },{ label: "$250K+ / year", value: "top", icon: "$$$$" }] },
 ];
@@ -123,6 +123,7 @@ function getPhase1Result(answers, context) {
   if (ctx.has_ea === "yes_good") totalScore = Math.max(totalScore - 1, 7); // EA handles some load
   if (ctx.has_ea === "yes_outgrown") totalScore += 1; // Outgrown EA = more need
   if (ctx.has_coo === "no_feel") totalScore += 1; // No COO and feeling it
+  totalScore = Math.min(Math.round(totalScore), 28); // Cap at 28 for display
   
   const duration = answers["duration"], budget = answers["budget"], stage = answers["stage"] || 0;
   if (totalScore <= 12) return { need: "none", totalScore, driver: ctx.driver || null };
@@ -172,9 +173,12 @@ function getPhase2Result(answers, context) {
 
 function submitToSheets(payload) {
   try {
-    var url = GOOGLE_SHEETS_WEBHOOK_URL + "?payload=" + encodeURIComponent(JSON.stringify(payload));
-    var img = new Image();
-    img.src = url;
+    fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
     return true;
   } catch (err) { console.error("Sheet error:", err); return false; }
 }
@@ -319,7 +323,13 @@ export default function ChiefOfStaffAssessment() {
     if (step + 1 < PHASE2_WRITEIN_QUESTIONS.length) { setStep(step + 1); setWriteInValue(""); }
     else { const result = getPhase2Result(p2Answers, contextAnswers); setP2Result(result); trackEvent("p2_complete", { archetype: result.primary }); setPhase("final"); }
   };
-  const goBack = () => { if (step > 0) { setSelected(null); setShowOtherInput(false); setOtherValue(""); setWriteInValue(""); setStep(step - 1); } };
+  const goBack = () => {
+    if (step > 0) { setSelected(null); setShowOtherInput(false); setOtherValue(""); setWriteInValue(""); setStep(step - 1); }
+    else if (phase === "context") { setPhase("intro"); }
+    else if (phase === "phase1") { setStep(CONTEXT_QUESTIONS.length - 1); setPhase("context"); }
+    else if (phase === "phase2mc") { setPhase("phase2intro"); }
+    else if (phase === "phase2writein") { setStep(PHASE2_MC_QUESTIONS.length - 1); setPhase("phase2mc"); }
+  };
   const restart = () => {
     setPhase("intro"); setStep(0); setP1Answers({}); setP2Answers({}); setContextAnswers({}); setOtherTexts({}); setWriteInAnswers({});
     setP1Result(null); setP2Result(null); setSelected(null); setLeadName(""); setLeadEmail(""); setLeadPhone("");
@@ -401,6 +411,7 @@ export default function ChiefOfStaffAssessment() {
     const secondary = secondaryType ? `\nSecondary Archetype: ${secondaryType.title}\nYour answers also showed strong signals for a ${secondaryType.title.toLowerCase()}. The ideal candidate might blend both.` : "";
     const dayOne = writeInAnswers.day_one ? `\nDay 1 Priority: ${writeInAnswers.day_one}` : "";
     const dayThirty = writeInAnswers.day_thirty ? `\nDay 30 Priority: ${writeInAnswers.day_thirty}` : "";
+    const driverNote = p1Result.driver === "fundraising" ? '<div style="padding:12px;background:#f0ede8;border-radius:4px;margin:16px 0;font-family:\'DM Mono\',monospace;font-size:13px;color:#555;line-height:1.6">Since you\'re fundraising or navigating a board change, look for someone who can own investor communications and board prep from day one.</div>' : p1Result.driver === "scaling" ? '<div style="padding:12px;background:#f0ede8;border-radius:4px;margin:16px 0;font-family:\'DM Mono\',monospace;font-size:13px;color:#555;line-height:1.6">You\'re scaling fast. The right CoS will diagnose the top 3 bottlenecks in week one and start fixing them by week three.</div>' : p1Result.driver === "transition" ? '<div style="padding:12px;background:#f0ede8;border-radius:4px;margin:16px 0;font-family:\'DM Mono\',monospace;font-size:13px;color:#555;line-height:1.6">Org transitions are high-stakes. Your CoS should have change management instincts \u2014 someone who can stabilize the team while you navigate the shift.</div>' : '';
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Chief of Staff Assessment Results</title>
 <style>@import url('https://fonts.googleapis.com/css2?family=Newsreader:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap');
 body{font-family:'Newsreader',Georgia,serif;max-width:650px;margin:40px auto;padding:0 32px;color:#1a1a1a;line-height:1.7}
@@ -419,6 +430,7 @@ h1{font-size:32px;font-weight:400;margin-bottom:4px}h2{font-size:18px;font-weigh
 <p style="font-size:17px;color:#888;font-style:italic;font-weight:300">${finalType.tagline}</p>
 <p style="margin-top:16px;font-size:15px;color:#444;font-weight:300">${finalType.description}</p>
 <div style="padding:14px;background:#f7f5f2;border-radius:4px;border-left:3px solid ${finalType.color};margin:20px 0"><p style="font-family:'DM Mono',monospace;font-size:14px;color:#444;margin:0"><strong>Our recommendation: You need a ${p1Result.model === "fractional" ? "fractional" : "full-time"} ${finalType.title}.</strong>${p1Result.model === "fractional" ? " That means the right person 2\u20133 days a week \u2014 not a full-time hire." : " This person should be fully embedded in your team."}</p></div>
+${driverNote}
 <div class="stat-row"><div class="stat"><div class="stat-num">${p1Result.totalScore}/28</div><div class="stat-label">Complexity Score</div></div><div class="stat"><div class="stat-num">${p1Result.model === "fractional" ? "Fractional" : "Full-Time"}</div><div class="stat-label">Type of Engagement</div></div></div>
 <h2>What this person does</h2>${finalType.whatTheyDo.map(i => '<div class="item">\u25C6 ' + i + '</div>').join("")}
 <h2>What to look for</h2>${finalType.whatToLookFor.map(i => '<div class="item">\u2192 ' + i + '</div>').join("")}
@@ -426,12 +438,18 @@ h1{font-size:32px;font-weight:400;margin-bottom:4px}h2{font-size:18px;font-weigh
 <h2>Compensation range</h2><div class="comp"><div class="comp-box"><div class="comp-label">Full-Time</div><div class="comp-val">${finalType.compRange.ft}</div></div><div class="comp-box"><div class="comp-label">Fractional</div><div class="comp-val">${finalType.compRange.frac}</div></div></div>
 ${secondary ? '<h2>Secondary Archetype</h2><p style="font-size:14px;color:#555">' + secondary + '</p>' : ''}
 ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-size:14px;color:#555"><strong>Day 1:</strong> ' + writeInAnswers.day_one + '</p>' : '') + (dayThirty ? '<p style="font-size:14px;color:#555"><strong>Day 30:</strong> ' + writeInAnswers.day_thirty + '</p>' : '') : ''}
-<div class="footer">Chief of Staff Assessment \u00B7 Built by Elliott Fisher \u00B7 cos-assessment.vercel.app</div>
+<div class="footer">Chief of Staff Assessment \u00B7 Built by Elliott Fisher \u00B7 cosassessment.com</div>
 </body></html>`;
-    const win = window.open("", "_blank");
-    win.document.write(html);
-    win.document.close();
-    setTimeout(() => win.print(), 500);
+    // Mobile-friendly download: use Blob + link click instead of window.open
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "CoS-Assessment-Results.html";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const finalType = p2Result ? COS_TYPES[p2Result.primary] : null;
@@ -583,7 +601,7 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
                 </button>
               ))}
             </div>
-            {step > 0 && <div style={{ marginTop: 32 }}><button className="back-btn" onClick={goBack}>&larr; Back</button></div>}
+            {<div style={{ marginTop: 32 }}><button className="back-btn" onClick={goBack}>&larr; Back</button></div>}
           </div>
         )}
 
@@ -693,7 +711,7 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
                 </button>
               ))}
             </div>
-            {step > 0 && <div style={{ marginTop: 32 }}><button className="back-btn" onClick={goBack}>&larr; Back</button></div>}
+            {<div style={{ marginTop: 32 }}><button className="back-btn" onClick={goBack}>&larr; Back</button></div>}
           </div>
         )}
 
@@ -822,7 +840,7 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
                 )}
               </>)}
             </div>
-            {step > 0 && <div style={{ marginTop: 32 }}><button className="back-btn" onClick={goBack}>&larr; Back</button></div>}
+            {<div style={{ marginTop: 32 }}><button className="back-btn" onClick={goBack}>&larr; Back</button></div>}
           </div>
         )}
 
@@ -838,7 +856,7 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
             <textarea className="writein-textarea" placeholder={currentWriteIn.placeholder} value={writeInValue} onChange={(e) => setWriteInValue(e.target.value)} maxLength={500} />
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16 }}>
               <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                {step > 0 && <button className="back-btn" onClick={goBack}>&larr; Back</button>}
+                {<button className="back-btn" onClick={goBack}>&larr; Back</button>}
                 <button className="skip-btn" onClick={handleWriteInSkip}>Skip this question &rarr;</button>
               </div>
               <button className="primary-btn" style={{ padding: "12px 32px", fontSize: 12 }} onClick={handleWriteInNext} disabled={!writeInValue.trim()}>
