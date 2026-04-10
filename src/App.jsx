@@ -1,3 +1,5 @@
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import CoSArchetypeQuiz from "./CoSArchetypeQuiz";
 import { useState, useEffect } from "react";
 
 const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzo_2fc4r1dMBJp4EE-cgKPVAHvT9KgaawXEGGQ1MVrTT8DX1u3Hy0_eRYhUXyvXyENiQ/exec";
@@ -183,7 +185,7 @@ function submitToSheets(payload) {
   } catch (err) { console.error("Sheet error:", err); return false; }
 }
 
-export default function ChiefOfStaffAssessment() {
+function ChiefOfStaffAssessment() {
   const [phase, setPhase] = useState("intro");
   const [step, setStep] = useState(0);
   const [p1Answers, setP1Answers] = useState({});
@@ -1187,3 +1189,16 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
     </div>
   );
 }
+
+function Root() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<ChiefOfStaffAssessment />} />
+        <Route path="/quiz" element={<CoSArchetypeQuiz />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default Root;
