@@ -260,6 +260,7 @@ export default function CoSQuiz() {
   const [copied, setCopied] = useState(false);
   const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 600);
   const [openSections, setOpenSections] = useState({
+    archetypeMap: true,
     profile: true,
     dominant: true,
     idealFit: false,
@@ -278,7 +279,7 @@ export default function CoSQuiz() {
 
   // ── RADAR CHART ──
   const RadarChart = ({ scores, dominant }) => {
-    const cx = 160, cy = 160, maxR = 100, total = 9;
+    const cx = 195, cy = 175, maxR = 110, total = 9;
     const axes = [
       { key: "S", label: "Strategic",       angle: -90  },
       { key: "O", label: "Operational",     angle: 0    },
@@ -290,54 +291,76 @@ export default function CoSQuiz() {
       y: cy + r * Math.sin((angle * Math.PI) / 180),
     });
     const gridLevels = [0.25, 0.5, 0.75, 1.0];
-    const scoredPoints = axes.map(({ key, angle }) => toXY(angle, (scores[key] / total) * maxR));
+    const scoredPoints = axes.map(({ key, angle }) => toXY(angle, Math.max((scores[key] / total) * maxR, 4)));
     const polyPoints = scoredPoints.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
     const domColor = dominant.length > 0 ? archetypes[dominant[0]].color : "#C9A96E";
 
     return (
-      <svg width="100%" viewBox="0 0 320 320" style={{ background: "#F8F6F2", display: "block", maxWidth: 320, margin: "0 auto" }}>
-        {/* Background */}
-        <rect width="320" height="320" fill="#F8F6F2" />
+      <svg width="100%" viewBox="0 0 390 350" style={{ display: "block" }}>
+        <rect width="390" height="350" fill="#0F0F0E" />
 
         {/* Grid rings */}
         {gridLevels.map((lvl, i) => (
-          <circle key={i} cx={cx} cy={cy} r={maxR * lvl} fill="none" stroke="#DDD9D2" strokeWidth={1} strokeDasharray={i < 3 ? "3 3" : "none"} />
+          <circle key={i} cx={cx} cy={cy} r={maxR * lvl}
+            fill="none"
+            stroke={i === 3 ? "#2E2E2A" : "#1E1E1C"}
+            strokeWidth={i === 3 ? 1.5 : 1}
+            strokeDasharray={i < 3 ? "3 4" : "none"}
+          />
         ))}
 
-        {/* Grid % labels */}
+        {/* % labels on vertical axis */}
         {gridLevels.map((lvl, i) => (
-          <text key={i} x={cx + 4} y={cy - maxR * lvl + 3} fontSize={8} fill="#BBBBAA" fontFamily="Georgia, serif">{Math.round(lvl * 100)}%</text>
+          <text key={i} x={cx + 5} y={cy - maxR * lvl - 4}
+            fontSize={8} fill="#2E2E2A" fontFamily="Georgia, serif" textAnchor="start">
+            {Math.round(lvl * 100)}%
+          </text>
         ))}
 
         {/* Axis lines */}
         {axes.map(({ key, angle }) => {
           const end = toXY(angle, maxR);
-          return <line key={key} x1={cx} y1={cy} x2={end.x.toFixed(1)} y2={end.y.toFixed(1)} stroke="#D0CCC6" strokeWidth={1} />;
+          return <line key={key} x1={cx} y1={cy} x2={end.x.toFixed(1)} y2={end.y.toFixed(1)} stroke="#252522" strokeWidth={1} />;
         })}
 
-        {/* Score polygon fill */}
-        <polygon points={polyPoints} fill={domColor + "28"} stroke={domColor} strokeWidth={2} strokeLinejoin="round" />
+        {/* Score polygon */}
+        <polygon points={polyPoints} fill={domColor + "22"} stroke={domColor} strokeWidth={1.5} strokeLinejoin="round" />
 
         {/* Score dots */}
         {scoredPoints.map((p, i) => (
-          <circle key={i} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r={5} fill={archetypes[axes[i].key].color} stroke="#F8F6F2" strokeWidth={1.5} />
+          <circle key={i} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r={5}
+            fill={archetypes[axes[i].key].color} stroke="#0F0F0E" strokeWidth={2} />
         ))}
 
-        {/* Axis labels */}
+        {/* Axis labels — name first, score below */}
         {axes.map(({ key, label, angle }) => {
-          const p = toXY(angle, maxR + 28);
-          const scoreP = toXY(angle, maxR + 42);
+          const labelDist = maxR + 26;
+          const p = toXY(angle, labelDist);
           const isDom = dominant.includes(key);
           const a = archetypes[key];
+          // Offset score line below label
+          const scoreOffset = angle === -90 ? -14 : 14;
+          const isVertical = angle === -90 || angle === 90;
+          const scoreY = isVertical ? p.y + scoreOffset : p.y + 13;
+          const scoreLine = { x: p.x, y: scoreY };
+
           return (
             <g key={key}>
-              <text x={p.x.toFixed(1)} y={p.y.toFixed(1)} textAnchor="middle" dominantBaseline="middle"
-                fontSize={11} fontFamily="Georgia, serif"
-                fill={isDom ? a.color : "#888078"} fontWeight={isDom ? "600" : "400"}>
+              <text
+                x={p.x.toFixed(1)} y={p.y.toFixed(1)}
+                textAnchor="middle" dominantBaseline="middle"
+                fontSize={12} fontFamily="Georgia, serif"
+                fill={isDom ? a.color : "#808078"}
+                fontWeight={isDom ? "600" : "400"}
+              >
                 {label}
               </text>
-              <text x={scoreP.x.toFixed(1)} y={scoreP.y.toFixed(1)} textAnchor="middle" dominantBaseline="middle"
-                fontSize={10} fontFamily="Georgia, serif" fill={isDom ? a.color + "CC" : "#AAAAAA"}>
+              <text
+                x={scoreLine.x.toFixed(1)} y={scoreLine.y.toFixed(1)}
+                textAnchor="middle" dominantBaseline="middle"
+                fontSize={10} fontFamily="Georgia, serif"
+                fill={isDom ? a.color + "BB" : "#484840"}
+              >
                 {scores[key]}/9
               </text>
             </g>
@@ -345,7 +368,7 @@ export default function CoSQuiz() {
         })}
 
         {/* Center dot */}
-        <circle cx={cx} cy={cy} r={3} fill={domColor + "88"} />
+        <circle cx={cx} cy={cy} r={3} fill={domColor + "66"} />
       </svg>
     );
   };
@@ -692,6 +715,10 @@ export default function CoSQuiz() {
           </tr>`;
         }).join("");
 
+        // Generate shareable results URL
+        const payload = btoa(JSON.stringify({ scores, result }));
+        const shareUrl = `${window.location.origin}${window.location.pathname}#result=${payload}`;
+
         const params = new URLSearchParams({
           name: nameInput,
           email: emailInput,
@@ -702,6 +729,7 @@ export default function CoSQuiz() {
           scoreO: scores.O,
           scoreE: scores.E,
           scoreT: scores.T,
+          shareUrl: shareUrl,
           barRows: encodeURIComponent(barRows),
         });
         new Image().src = `https://script.google.com/macros/s/AKfycbzo_2fc4r1dMBJp4EE-cgKPVAHvT9KgaawXEGGQ1MVrTT8DX1u3Hy0_eRYhUXyvXyENiQ/exec?${params}`;
@@ -750,20 +778,21 @@ export default function CoSQuiz() {
             })}
           </div>
 
-          {/* ── RADAR CHART ── */}
-          <div style={{ marginBottom: 28, padding: "24px 20px", background: "#F8F6F2", border: "1px solid #E8E4DC" }}>
-            <div style={{ fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "#A09890", marginBottom: 16, textAlign: "center" }}>
-              Your Archetype Map
-            </div>
-            <RadarChart scores={scores} dominant={dominant} />
-            <div style={{ display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap", marginTop: 16 }}>
-              {KEYS.map((k) => (
-                <div key={k} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: archetypes[k].color }} />
-                  <span style={{ fontSize: 11, color: "#888078", fontFamily: "Georgia, serif" }}>{archetypes[k].short}</span>
+          {/* ── RADAR CHART ACCORDION ── */}
+          <div style={{ marginBottom: 8 }}>
+            <Accordion sectionKey="archetypeMap" label="Your Archetype Map" color={archetypes[dominant[0]].color} defaultDot>
+              <div style={{ padding: "8px 0 4px" }}>
+                <RadarChart scores={scores} dominant={dominant} />
+                <div style={{ display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap", marginTop: 14 }}>
+                  {KEYS.map((k) => (
+                    <div key={k} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <div style={{ width: 7, height: 7, borderRadius: "50%", background: archetypes[k].color }} />
+                      <span style={{ fontSize: 11, color: "#808078", fontFamily: "Georgia, serif" }}>{archetypes[k].short}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            </Accordion>
           </div>
 
           {/* ── EMAIL CAPTURE ── */}
