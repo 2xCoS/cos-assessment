@@ -276,6 +276,80 @@ export default function CoSQuiz() {
   const toggleSection = (key) =>
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
 
+  // ── RADAR CHART ──
+  const RadarChart = ({ scores, dominant }) => {
+    const cx = 160, cy = 160, maxR = 100, total = 9;
+    const axes = [
+      { key: "S", label: "Strategic",       angle: -90  },
+      { key: "O", label: "Operational",     angle: 0    },
+      { key: "E", label: "External-Facing", angle: 90   },
+      { key: "T", label: "Transformation",  angle: 180  },
+    ];
+    const toXY = (angle, r) => ({
+      x: cx + r * Math.cos((angle * Math.PI) / 180),
+      y: cy + r * Math.sin((angle * Math.PI) / 180),
+    });
+    const gridLevels = [0.25, 0.5, 0.75, 1.0];
+    const scoredPoints = axes.map(({ key, angle }) => toXY(angle, (scores[key] / total) * maxR));
+    const polyPoints = scoredPoints.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+    const domColor = dominant.length > 0 ? archetypes[dominant[0]].color : "#C9A96E";
+
+    return (
+      <svg width="100%" viewBox="0 0 320 320" style={{ background: "#F8F6F2", display: "block", maxWidth: 320, margin: "0 auto" }}>
+        {/* Background */}
+        <rect width="320" height="320" fill="#F8F6F2" />
+
+        {/* Grid rings */}
+        {gridLevels.map((lvl, i) => (
+          <circle key={i} cx={cx} cy={cy} r={maxR * lvl} fill="none" stroke="#DDD9D2" strokeWidth={1} strokeDasharray={i < 3 ? "3 3" : "none"} />
+        ))}
+
+        {/* Grid % labels */}
+        {gridLevels.map((lvl, i) => (
+          <text key={i} x={cx + 4} y={cy - maxR * lvl + 3} fontSize={8} fill="#BBBBAA" fontFamily="Georgia, serif">{Math.round(lvl * 100)}%</text>
+        ))}
+
+        {/* Axis lines */}
+        {axes.map(({ key, angle }) => {
+          const end = toXY(angle, maxR);
+          return <line key={key} x1={cx} y1={cy} x2={end.x.toFixed(1)} y2={end.y.toFixed(1)} stroke="#D0CCC6" strokeWidth={1} />;
+        })}
+
+        {/* Score polygon fill */}
+        <polygon points={polyPoints} fill={domColor + "28"} stroke={domColor} strokeWidth={2} strokeLinejoin="round" />
+
+        {/* Score dots */}
+        {scoredPoints.map((p, i) => (
+          <circle key={i} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r={5} fill={archetypes[axes[i].key].color} stroke="#F8F6F2" strokeWidth={1.5} />
+        ))}
+
+        {/* Axis labels */}
+        {axes.map(({ key, label, angle }) => {
+          const p = toXY(angle, maxR + 28);
+          const scoreP = toXY(angle, maxR + 42);
+          const isDom = dominant.includes(key);
+          const a = archetypes[key];
+          return (
+            <g key={key}>
+              <text x={p.x.toFixed(1)} y={p.y.toFixed(1)} textAnchor="middle" dominantBaseline="middle"
+                fontSize={11} fontFamily="Georgia, serif"
+                fill={isDom ? a.color : "#888078"} fontWeight={isDom ? "600" : "400"}>
+                {label}
+              </text>
+              <text x={scoreP.x.toFixed(1)} y={scoreP.y.toFixed(1)} textAnchor="middle" dominantBaseline="middle"
+                fontSize={10} fontFamily="Georgia, serif" fill={isDom ? a.color + "CC" : "#AAAAAA"}>
+                {scores[key]}/9
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Center dot */}
+        <circle cx={cx} cy={cy} r={3} fill={domColor + "88"} />
+      </svg>
+    );
+  };
+
   const Accordion = ({ sectionKey, label, color, children, defaultDot }) => {
     const isOpen = openSections[sectionKey];
     return (
@@ -601,6 +675,23 @@ export default function CoSQuiz() {
       try {
         const dominantLabels = dominant.map((k) => archetypes[k].label).join(" & ");
         const secondaryLabel = rest.length > 0 ? archetypes[rest[0]].label : "";
+
+        // Build HTML score bars for email
+        const barRows = KEYS.map((k) => {
+          const a = archetypes[k];
+          const pct = Math.round((scores[k] / 9) * 100);
+          const isDom = dominant.includes(k);
+          return `<tr>
+            <td style="padding:4px 8px 4px 0;font-family:Georgia,serif;font-size:13px;color:${isDom ? a.color : "#888"};width:110px">${a.short}</td>
+            <td style="padding:4px 0">
+              <div style="background:#F0EDE8;border-radius:2px;height:10px;width:200px">
+                <div style="background:${a.color};height:10px;width:${pct * 2}px;border-radius:2px"></div>
+              </div>
+            </td>
+            <td style="padding:4px 0 4px 8px;font-family:Georgia,serif;font-size:12px;color:${isDom ? a.color : "#AAA"}">${scores[k]}/9</td>
+          </tr>`;
+        }).join("");
+
         const params = new URLSearchParams({
           name: nameInput,
           email: emailInput,
@@ -611,6 +702,7 @@ export default function CoSQuiz() {
           scoreO: scores.O,
           scoreE: scores.E,
           scoreT: scores.T,
+          barRows: encodeURIComponent(barRows),
         });
         new Image().src = `https://script.google.com/macros/s/AKfycbzo_2fc4r1dMBJp4EE-cgKPVAHvT9KgaawXEGGQ1MVrTT8DX1u3Hy0_eRYhUXyvXyENiQ/exec?${params}`;
         setTimeout(() => {
@@ -656,6 +748,22 @@ export default function CoSQuiz() {
                 </div>
               );
             })}
+          </div>
+
+          {/* ── RADAR CHART ── */}
+          <div style={{ marginBottom: 28, padding: "24px 20px", background: "#F8F6F2", border: "1px solid #E8E4DC" }}>
+            <div style={{ fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "#A09890", marginBottom: 16, textAlign: "center" }}>
+              Your Archetype Map
+            </div>
+            <RadarChart scores={scores} dominant={dominant} />
+            <div style={{ display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap", marginTop: 16 }}>
+              {KEYS.map((k) => (
+                <div key={k} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: archetypes[k].color }} />
+                  <span style={{ fontSize: 11, color: "#888078", fontFamily: "Georgia, serif" }}>{archetypes[k].short}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* ── EMAIL CAPTURE ── */}
