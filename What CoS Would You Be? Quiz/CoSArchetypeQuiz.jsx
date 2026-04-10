@@ -259,6 +259,53 @@ export default function CoSQuiz() {
   const [shuffledQuestions, setShuffledQuestions] = useState(makeShuffled);
   const [copied, setCopied] = useState(false);
   const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 600);
+  const [openSections, setOpenSections] = useState({
+    profile: true,
+    dominant: true,
+    idealFit: false,
+    cosPairing: false,
+    companyCompat: false,
+    execCompat: false,
+    secondary: false,
+    lowerSignals: false,
+  });
+
+  const toggleSection = (key) =>
+    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  const Accordion = ({ sectionKey, label, color, children, defaultDot }) => {
+    const isOpen = openSections[sectionKey];
+    return (
+      <div style={{ marginBottom: 2 }}>
+        <button
+          onClick={() => toggleSection(sectionKey)}
+          style={{
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            width: "100%", padding: "13px 16px",
+            background: isOpen ? "#141412" : "#111110",
+            border: `1px solid ${isOpen ? "#242420" : "#1A1A18"}`,
+            cursor: "pointer", marginBottom: isOpen ? 0 : 2,
+            transition: "all 0.15s",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {defaultDot && <div style={{ width: 6, height: 6, borderRadius: "50%", background: color || "#555", flexShrink: 0 }} />}
+            <span style={{ fontFamily: "Georgia, serif", fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: isOpen ? (color || "#C0B8B0") : "#606058" }}>
+              {label}
+            </span>
+          </div>
+          <span style={{ fontSize: 14, color: isOpen ? (color || "#808078") : "#404038", lineHeight: 1 }}>
+            {isOpen ? "−" : "+"}
+          </span>
+        </button>
+        {isOpen && (
+          <div style={{ padding: "16px", background: "#0F0F0E", border: "1px solid #1A1A18", borderTop: "none", marginBottom: 8 }}>
+            {children}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const handleShare = (scoresObj, resultKey) => {
     try {
@@ -324,14 +371,14 @@ export default function CoSQuiz() {
     return (
       <div style={base}>
         <div style={{ maxWidth: 620, width: "100%" }}>
-          <div style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "#666", marginBottom: 24 }}>
+          <div style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "#999990", marginBottom: 24 }}>
             Chief of Staff × Self-Assessment
           </div>
           <h1 style={{ fontSize: "clamp(28px, 5vw, 44px)", fontWeight: 400, lineHeight: 1.15, color: "#E8E4DC", margin: "0 0 20px 0" }}>
             What kind of Chief<br />of Staff would you be?
           </h1>
           <div style={{ width: 48, height: 1, background: "#333", margin: "0 0 28px 0" }} />
-          <p style={{ fontSize: "clamp(15px, 2.5vw, 18px)", lineHeight: 1.7, color: "#A09890", margin: "0 0 28px 0" }}>
+          <p style={{ fontSize: "clamp(15px, 2.5vw, 18px)", lineHeight: 1.7, color: "#D0C8C0", margin: "0 0 28px 0" }}>
             There are four distinct archetypes of effective Chiefs of Staff.
             Nine questions to find yours — and what it says about how you lead.
           </p>
@@ -339,7 +386,7 @@ export default function CoSQuiz() {
             {KEYS.map((k) => (
               <div key={k} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <div style={{ width: 6, height: 6, borderRadius: "50%", background: archetypes[k].color }} />
-                <span style={{ fontSize: 13, color: "#666" }}>{archetypes[k].short}</span>
+                <span style={{ fontSize: 13, color: "#999990" }}>{archetypes[k].short}</span>
               </div>
             ))}
           </div>
@@ -349,7 +396,7 @@ export default function CoSQuiz() {
           >
             Begin →
           </button>
-          <p style={{ marginTop: 16, fontSize: 12, color: "#3A3A38" }}>Takes about 3 minutes</p>
+          <p style={{ marginTop: 16, fontSize: 12, color: "#707068" }}>Takes about 3 minutes</p>
         </div>
       </div>
     );
@@ -378,7 +425,7 @@ export default function CoSQuiz() {
             opacity: revealed && !animating ? 1 : 0,
             transition: animating ? "none" : "all 0.35s ease",
           }}>
-            <div style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "#3A3A38", marginBottom: 12 }}>
+            <div style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "#707068", marginBottom: 12 }}>
               Running tally
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -408,7 +455,7 @@ export default function CoSQuiz() {
             </div>
           </div>
 
-          <div style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "#555", marginBottom: 14 }}>
+          <div style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "#909088", marginBottom: 14 }}>
             Question {current + 1} of {TOTAL}
           </div>
 
@@ -432,7 +479,7 @@ export default function CoSQuiz() {
                     minHeight: 52,
                     background: isSelected ? "#161614" : "transparent",
                     border: isSelected ? `1px solid ${arch.color}` : "1px solid #1E1E1C",
-                    color: isSelected ? "#E8E4DC" : isOther ? "#333" : "#909090",
+                    color: isSelected ? "#E8E4DC" : isOther ? "#333" : "#C8C0B8",
                     fontFamily: "Georgia, serif",
                     fontSize: "clamp(13px, 2vw, 15px)", lineHeight: 1.5,
                     cursor: revealed ? "default" : "pointer",
@@ -447,7 +494,7 @@ export default function CoSQuiz() {
                   onMouseLeave={(e) => {
                     if (!revealed) {
                       e.currentTarget.style.borderColor = "#1E1E1C";
-                      e.currentTarget.style.color = "#909090";
+                      e.currentTarget.style.color = "#C8C0B8";
                     }
                   }}
                 >
@@ -476,7 +523,7 @@ export default function CoSQuiz() {
           {/* Post-selection feedback */}
           {revealed && !animating && (
             <div style={{ marginTop: 6, paddingTop: 18 }}>
-              <p style={{ fontSize: 13, color: "#555", margin: "0 0 16px 0", fontStyle: "italic" }}>
+              <p style={{ fontSize: 13, color: "#909088", margin: "0 0 16px 0", fontStyle: "italic" }}>
                 That answer signals{" "}
                 <span style={{ color: archetypes[selected].color, fontStyle: "normal" }}>
                   {archetypes[selected].label}
@@ -545,9 +592,9 @@ export default function CoSQuiz() {
       <div style={base}>
         <div style={{ maxWidth: 620, width: "100%" }}>
 
-          {/* Score bar summary */}
-          <div style={{ marginBottom: 36, padding: "18px 20px", background: "#111110", border: "1px solid #1A1A18" }}>
-            <div style={{ fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "#3A3A38", marginBottom: 16 }}>
+          {/* Score bar summary — always visible */}
+          <div style={{ marginBottom: 28, padding: "18px 20px", background: "#111110", border: "1px solid #1A1A18" }}>
+            <div style={{ fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "#707068", marginBottom: 16 }}>
               Your full profile — {totalAnswered} answers
             </div>
             {sortedKeys.map((k) => {
@@ -560,7 +607,7 @@ export default function CoSQuiz() {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <div style={{ width: 6, height: 6, borderRadius: "50%", background: rankColor(k), flexShrink: 0 }} />
-                      <span style={{ fontSize: 12, color: isDom ? a.color : "#484840" }}>{a.short}</span>
+                      <span style={{ fontSize: 12, color: isDom ? a.color : "#888880" }}>{a.short}</span>
                       <span style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: isDom ? a.color + "99" : "#252520", border: `1px solid ${isDom ? a.color + "33" : "#1E1E1C"}`, padding: "1px 6px" }}>
                         {rankLabel(k)}
                       </span>
@@ -578,103 +625,82 @@ export default function CoSQuiz() {
           </div>
 
           {/* ── DOMINANT ── */}
-          <div style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "#555", marginBottom: 16 }}>
-            {isTie ? "Your Co-Dominant Archetypes" : "Your Dominant Archetype"}
-          </div>
           {dominant.map((k) => {
             const a = archetypes[k];
             return (
-              <div key={k} style={{ marginBottom: 28 }}>
-                <div style={{ width: 40, height: 3, background: a.color, marginBottom: 16 }} />
-                <p style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: a.color, margin: "0 0 8px 0" }}>
-                  {a.tagline}
-                </p>
-                <h2 style={{ fontSize: "clamp(20px, 3.5vw, 30px)", fontWeight: 400, color: "#E8E4DC", margin: "0 0 16px 0", lineHeight: 1.2 }}>
-                  {a.label}
-                </h2>
-                <p style={{ fontSize: "clamp(14px, 2vw, 16px)", lineHeight: 1.8, color: "#B0A898", margin: "0 0 16px 0" }}>
-                  {a.description}
-                </p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
-                  {a.traits.map((t) => (
-                    <span key={t} style={{ padding: "5px 13px", border: `1px solid ${a.color}33`, color: a.color, fontSize: 12 }}>{t}</span>
-                  ))}
-                </div>
-                <div style={{ padding: "12px 16px", background: "#111110", border: "1px solid #1A1A18", marginBottom: 14 }}>
-                  <span style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "#444" }}>Watch: </span>
-                  <span style={{ fontSize: 13, color: "#5A5248", lineHeight: 1.6 }}>{a.blind_spot}</span>
-                </div>
-
-                {/* Ideal fit */}
-                <div style={{ marginTop: 4, marginBottom: 20 }}>
-                  <div style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "#444", marginBottom: 14 }}>
-                    Ideal fit
+              <div key={k} style={{ marginBottom: 20 }}>
+                {/* Always-visible header */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ width: 40, height: 3, background: a.color, marginBottom: 14 }} />
+                  <p style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: a.color, margin: "0 0 6px 0" }}>
+                    {isTie ? "Co-Dominant · " : "Dominant · "}{a.tagline}
+                  </p>
+                  <h2 style={{ fontSize: "clamp(20px, 3.5vw, 30px)", fontWeight: 400, color: "#E8E4DC", margin: "0 0 14px 0", lineHeight: 1.2 }}>
+                    {a.label}
+                  </h2>
+                  <p style={{ fontSize: "clamp(14px, 2vw, 16px)", lineHeight: 1.8, color: "#DDD5CC", margin: "0 0 14px 0" }}>
+                    {a.description}
+                  </p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+                    {a.traits.map((t) => (
+                      <span key={t} style={{ padding: "5px 13px", border: `1px solid ${a.color}33`, color: a.color, fontSize: 12 }}>{t}</span>
+                    ))}
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12, marginBottom: 0 }}>
-                    <div style={{ padding: "16px", background: "#111110", border: `1px solid ${a.color}22` }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                        <div style={{ width: 18, height: 18, borderRadius: "50%", background: a.color + "22", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                          <div style={{ width: 5, height: 5, borderRadius: "50%", background: a.color }} />
-                        </div>
-                        <span style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: a.color + "99" }}>Company</span>
-                      </div>
-                      <p style={{ fontSize: 13, lineHeight: 1.7, color: "#706860", margin: 0 }}>{a.ideal_company}</p>
-                    </div>
-                    <div style={{ padding: "16px", background: "#111110", border: `1px solid ${a.color}22` }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                        <div style={{ width: 18, height: 18, borderRadius: "50%", background: a.color + "22", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                          <div style={{ width: 5, height: 5, borderRadius: "50%", background: a.color }} />
-                        </div>
-                        <span style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: a.color + "99" }}>Executive</span>
-                      </div>
-                      <p style={{ fontSize: 13, lineHeight: 1.7, color: "#706860", margin: 0 }}>{a.ideal_exec}</p>
-                    </div>
+                  <div style={{ padding: "12px 16px", background: "#111110", border: "1px solid #1A1A18", marginBottom: 16 }}>
+                    <span style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "#808078" }}>Watch: </span>
+                    <span style={{ fontSize: 13, color: "#AA9A90", lineHeight: 1.6 }}>{a.blind_spot}</span>
                   </div>
                 </div>
 
-                {/* CoS Pairing */}
-                <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "#444", marginBottom: 14 }}>
-                    CoS pairing compatibility
+                {/* Accordions for detail sections */}
+                <Accordion sectionKey="idealFit" label="Ideal Fit" color={a.color} defaultDot>
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
+                    <div style={{ padding: "14px", background: "#111110", border: `1px solid ${a.color}22` }}>
+                      <div style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: a.color + "99", marginBottom: 8 }}>Company</div>
+                      <p style={{ fontSize: 13, lineHeight: 1.7, color: "#B0A090", margin: 0 }}>{a.ideal_company}</p>
+                    </div>
+                    <div style={{ padding: "14px", background: "#111110", border: `1px solid ${a.color}22` }}>
+                      <div style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: a.color + "99", marginBottom: 8 }}>Executive</div>
+                      <p style={{ fontSize: 13, lineHeight: 1.7, color: "#B0A090", margin: 0 }}>{a.ideal_exec}</p>
+                    </div>
                   </div>
-                  <div style={{ padding: "16px 18px", background: "#111110", border: `1px solid ${a.color}33`, marginBottom: 10 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: a.color }} />
-                        <span style={{ fontSize: 11, color: a.color, letterSpacing: "0.05em" }}>{a.short}</span>
+                </Accordion>
+
+                <Accordion sectionKey="cosPairing" label="CoS Pairing Compatibility" color={a.color} defaultDot>
+                  <div style={{ padding: "14px 16px", background: "#111110", border: `1px solid ${a.color}33`, marginBottom: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                        <div style={{ width: 7, height: 7, borderRadius: "50%", background: a.color }} />
+                        <span style={{ fontSize: 11, color: a.color }}>{a.short}</span>
+                      </div>
+                      <span style={{ fontSize: 11, color: "#444" }}>+</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                        <div style={{ width: 7, height: 7, borderRadius: "50%", background: archetypes[a.cos_pairing.best].color }} />
+                        <span style={{ fontSize: 11, color: archetypes[a.cos_pairing.best].color }}>{archetypes[a.cos_pairing.best].short}</span>
+                      </div>
+                      <span style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#4A6A50", border: "1px solid #2A3A2A", padding: "1px 6px" }}>Best match</span>
+                    </div>
+                    <p style={{ fontSize: 12, color: "#8A8070", fontStyle: "italic", margin: "0 0 6px 0" }}>{a.cos_pairing.headline}</p>
+                    <p style={{ fontSize: 13, color: "#B0A090", lineHeight: 1.65, margin: 0 }}>{a.cos_pairing.why}</p>
+                  </div>
+                  <div style={{ padding: "14px 16px", background: "#111110", border: "1px solid #1E1C1A" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                        <div style={{ width: 7, height: 7, borderRadius: "50%", background: a.color + "55" }} />
+                        <span style={{ fontSize: 11, color: "#706858" }}>{a.short}</span>
                       </div>
                       <span style={{ fontSize: 11, color: "#333" }}>+</span>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: archetypes[a.cos_pairing.best].color }} />
-                        <span style={{ fontSize: 11, color: archetypes[a.cos_pairing.best].color, letterSpacing: "0.05em" }}>{archetypes[a.cos_pairing.best].short}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                        <div style={{ width: 7, height: 7, borderRadius: "50%", background: archetypes[a.cos_pairing.tension].color + "55" }} />
+                        <span style={{ fontSize: 11, color: "#706858" }}>{archetypes[a.cos_pairing.tension].short}</span>
                       </div>
-                      <span style={{ fontSize: 9, letterSpacing: "0.15em", textTransform: "uppercase", color: "#4A6A50", border: "1px solid #2A3A2A", padding: "1px 7px", marginLeft: 4 }}>Best match</span>
+                      <span style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#5A3A2A", border: "1px solid #2A1E1A", padding: "1px 6px" }}>Handle with care</span>
                     </div>
-                    <p style={{ fontSize: 12, color: "#4A4840", fontStyle: "italic", margin: "0 0 6px 0" }}>{a.cos_pairing.headline}</p>
-                    <p style={{ fontSize: 13, color: "#706860", lineHeight: 1.65, margin: 0 }}>{a.cos_pairing.why}</p>
+                    <p style={{ fontSize: 13, color: "#706858", lineHeight: 1.65, margin: 0 }}>{a.cos_pairing.tension_note}</p>
                   </div>
-                  <div style={{ padding: "14px 18px", background: "#111110", border: "1px solid #1E1C1A" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: a.color + "55" }} />
-                        <span style={{ fontSize: 11, color: "#484038", letterSpacing: "0.05em" }}>{a.short}</span>
-                      </div>
-                      <span style={{ fontSize: 11, color: "#2A2A28" }}>+</span>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: archetypes[a.cos_pairing.tension].color + "55" }} />
-                        <span style={{ fontSize: 11, color: "#484038", letterSpacing: "0.05em" }}>{archetypes[a.cos_pairing.tension].short}</span>
-                      </div>
-                      <span style={{ fontSize: 9, letterSpacing: "0.15em", textTransform: "uppercase", color: "#5A3A2A", border: "1px solid #2A1E1A", padding: "1px 7px", marginLeft: 4 }}>Handle with care</span>
-                    </div>
-                    <p style={{ fontSize: 13, color: "#3A3028", lineHeight: 1.65, margin: 0 }}>{a.cos_pairing.tension_note}</p>
-                  </div>
-                </div>
+                </Accordion>
 
-                {/* Company Stage Compatibility */}
-                <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "#444", marginBottom: 14 }}>
-                    Company stage compatibility
-                  </div>
+                <Accordion sectionKey="companyCompat" label="Company Stage Compatibility" color={a.color} defaultDot>
                   {a.company_compat.map((c) => {
                     const fitColor = c.fit === "high" ? "#5A8A60" : c.fit === "medium" ? "#8A7A40" : "#6A3A30";
                     const fitBg = c.fit === "high" ? "#0A1A0C" : c.fit === "medium" ? "#1A1600" : "#1A0A08";
@@ -683,22 +709,18 @@ export default function CoSQuiz() {
                     return (
                       <div key={c.stage} style={{ display: "flex", gap: 14, marginBottom: 10, padding: "12px 14px", background: "#111110", border: "1px solid #181816" }}>
                         <div style={{ flexShrink: 0, width: isMobile ? 82 : 90 }}>
-                          <div style={{ fontSize: 10, color: "#383430", marginBottom: 4 }}>{c.stage}</div>
+                          <div style={{ fontSize: 10, color: "#707068", marginBottom: 4 }}>{c.stage}</div>
                           <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: fitColor, background: fitBg, border: `1px solid ${fitBorder}`, padding: "2px 6px", whiteSpace: "nowrap", display: "inline-block" }}>
                             {fitLabel}
                           </span>
                         </div>
-                        <p style={{ fontSize: 12, color: "#4A4440", lineHeight: 1.6, margin: 0 }}>{c.note}</p>
+                        <p style={{ fontSize: 12, color: "#8A8070", lineHeight: 1.6, margin: 0 }}>{c.note}</p>
                       </div>
                     );
                   })}
-                </div>
+                </Accordion>
 
-                {/* Executive Type Compatibility */}
-                <div style={{ marginBottom: 8 }}>
-                  <div style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "#444", marginBottom: 14 }}>
-                    Executive type compatibility
-                  </div>
+                <Accordion sectionKey="execCompat" label="Executive Type Compatibility" color={a.color} defaultDot>
                   {a.exec_compat.map((e) => {
                     const fitColor = e.fit === "high" ? "#5A8A60" : e.fit === "medium" ? "#8A7A40" : "#6A3A30";
                     const fitBg = e.fit === "high" ? "#0A1A0C" : e.fit === "medium" ? "#1A1600" : "#1A0A08";
@@ -707,16 +729,16 @@ export default function CoSQuiz() {
                     return (
                       <div key={e.type} style={{ display: "flex", gap: 14, marginBottom: 10, padding: "12px 14px", background: "#111110", border: "1px solid #181816" }}>
                         <div style={{ flexShrink: 0, width: isMobile ? 82 : 90 }}>
-                          <div style={{ fontSize: 10, color: "#383430", marginBottom: 4 }}>{e.type}</div>
+                          <div style={{ fontSize: 10, color: "#707068", marginBottom: 4 }}>{e.type}</div>
                           <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: fitColor, background: fitBg, border: `1px solid ${fitBorder}`, padding: "2px 6px", whiteSpace: "nowrap", display: "inline-block" }}>
                             {fitLabel}
                           </span>
                         </div>
-                        <p style={{ fontSize: 12, color: "#4A4440", lineHeight: 1.6, margin: 0 }}>{e.note}</p>
+                        <p style={{ fontSize: 12, color: "#8A8070", lineHeight: 1.6, margin: 0 }}>{e.note}</p>
                       </div>
                     );
                   })}
-                </div>
+                </Accordion>
 
               </div>
             );
@@ -724,66 +746,63 @@ export default function CoSQuiz() {
 
           {/* ── SECONDARY ── */}
           {rest.length > 0 && (
-            <div style={{ marginBottom: 24, paddingTop: 24, borderTop: "1px solid #1A1A18" }}>
-              <div style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "#444", marginBottom: 14 }}>
-                Secondary Archetype
-              </div>
-              {(() => {
-                const k = rest[0];
-                const a = archetypes[k];
-                return (
-                  <>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: a.color + "AA" }} />
-                      <span style={{ fontSize: "clamp(15px, 2.5vw, 19px)", color: "#A09890", fontWeight: 400 }}>{a.label}</span>
-                      <span style={{ fontSize: 9, color: a.color + "88", border: `1px solid ${a.color}2A`, padding: "2px 7px", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                        {scores[k]}/{totalAnswered}
-                      </span>
-                    </div>
-                    <p style={{ fontSize: "clamp(13px, 2vw, 15px)", lineHeight: 1.75, color: "#5A5248", margin: "0 0 12px 0" }}>
-                      {secondaryContext[k]}
-                    </p>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                      {a.traits.map((t) => (
-                        <span key={t} style={{ padding: "4px 11px", border: `1px solid ${a.color}1A`, color: a.color + "66", fontSize: 11 }}>{t}</span>
-                      ))}
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-          )}
-
-          {/* ── TERTIARY + LEAST DOMINANT ── */}
-          {rest.length > 1 && (
-            <div style={{ paddingTop: 20, borderTop: "1px solid #141412", marginBottom: 28 }}>
-              <div style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "#2E2E2C", marginBottom: 16 }}>
-                Lower signals
-              </div>
-              {rest.slice(1).map((k, i) => {
-                const a = archetypes[k];
-                const isLeast = i === rest.slice(1).length - 1;
-                return (
-                  <div key={k} style={{ marginBottom: 16, paddingLeft: 14, borderLeft: `2px solid ${a.color}1A` }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: isLeast ? 8 : 0 }}>
-                      <span style={{ fontSize: 13, color: "#302E2A" }}>{a.label}</span>
-                      <span style={{ fontSize: 9, color: "#252520", border: "1px solid #1A1A18", padding: "1px 6px", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                        {rankLabel(k)} · {scores[k]}/{totalAnswered}
-                      </span>
-                    </div>
-                    {isLeast && (
-                      <p style={{ fontSize: 13, lineHeight: 1.65, color: "#383430", margin: 0 }}>
-                        {leastContext[k]}
+            <div style={{ marginTop: 8 }}>
+              <Accordion sectionKey="secondary" label={`Secondary — ${archetypes[rest[0]].short}`} color={archetypes[rest[0]].color} defaultDot>
+                {(() => {
+                  const k = rest[0];
+                  const a = archetypes[k];
+                  return (
+                    <>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: "clamp(14px, 2.5vw, 17px)", color: "#D0C8C0", fontWeight: 400 }}>{a.label}</span>
+                        <span style={{ fontSize: 9, color: a.color + "88", border: `1px solid ${a.color}2A`, padding: "2px 7px", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                          {scores[k]}/{totalAnswered}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: "clamp(13px, 2vw, 15px)", lineHeight: 1.75, color: "#AA9A90", margin: "0 0 12px 0" }}>
+                        {secondaryContext[k]}
                       </p>
-                    )}
-                  </div>
-                );
-              })}
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        {a.traits.map((t) => (
+                          <span key={t} style={{ padding: "4px 11px", border: `1px solid ${a.color}1A`, color: a.color + "88", fontSize: 11 }}>{t}</span>
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
+              </Accordion>
             </div>
           )}
 
-          <div style={{ height: 1, background: "#1A1A18", marginBottom: 24 }} />
-          <p style={{ fontSize: 14, color: "#555", marginBottom: 18, lineHeight: 1.6 }}>
+          {/* ── LOWER SIGNALS ── */}
+          {rest.length > 1 && (
+            <div style={{ marginTop: 2 }}>
+              <Accordion sectionKey="lowerSignals" label="Lower Signals" defaultDot={false}>
+                {rest.slice(1).map((k, i) => {
+                  const a = archetypes[k];
+                  const isLeast = i === rest.slice(1).length - 1;
+                  return (
+                    <div key={k} style={{ marginBottom: 14, paddingLeft: 12, borderLeft: `2px solid ${a.color}22` }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: isLeast ? 6 : 0, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 13, color: "#707068" }}>{a.label}</span>
+                        <span style={{ fontSize: 9, color: "#404038", border: "1px solid #1A1A18", padding: "1px 6px", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                          {rankLabel(k)} · {scores[k]}/{totalAnswered}
+                        </span>
+                      </div>
+                      {isLeast && (
+                        <p style={{ fontSize: 13, lineHeight: 1.65, color: "#606058", margin: 0 }}>
+                          {leastContext[k]}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </Accordion>
+            </div>
+          )}
+
+          <div style={{ height: 1, background: "#1A1A18", margin: "28px 0 24px" }} />
+          <p style={{ fontSize: 14, color: "#909088", marginBottom: 18, lineHeight: 1.6 }}>
             Curious whether your organization actually needs this archetype?
           </p>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", flexDirection: isMobile ? "column" : "row", marginBottom: 20 }}>
@@ -803,7 +822,7 @@ export default function CoSQuiz() {
             </button>
             <button
               onClick={handleRestart}
-              style={{ padding: "16px 24px", background: "transparent", color: "#555", fontFamily: "Georgia, serif", fontSize: 15, border: "1px solid #1E1E1C", cursor: "pointer" }}
+              style={{ padding: "16px 24px", background: "transparent", color: "#909088", fontFamily: "Georgia, serif", fontSize: 15, border: "1px solid #1E1E1C", cursor: "pointer" }}
             >
               Retake
             </button>
