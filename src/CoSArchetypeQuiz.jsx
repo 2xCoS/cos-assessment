@@ -1,4 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+// ── ANALYTICS (safe Vercel Analytics wrapper) ──
+const track = (event, props = {}) => {
+  try { window.va?.("event", { name: event, ...props }); } catch (e) {}
+};
 
 const shuffle = (arr) => {
   const a = [...arr];
@@ -136,8 +141,8 @@ const archetypes = {
       "You're the person who makes sure decisions actually happen. You build the systems, the cadences, and the accountability structures that turn good intentions into shipped outcomes. Where others see chaos, you see a missing operating rhythm. Operational CoS profiles are invaluable in organizations where complexity has outpaced process — and where the gap between decision and result is costing the company dearly.",
     traits: ["Systems thinker", "Detail-oriented", "Accountable", "Process-driven"],
     blind_spot: "Don't let perfect process slow down necessary speed.",
-    ideal_company: "You're built for companies where growth has outpaced the operating model — typically 50 to 500 employees where the informal systems that worked at 20 people are visibly breaking down. High-growth SaaS, scaling marketplaces, and post-Series B companies adding headcount faster than they're adding structure are your natural habitat. If a company has more decisions than it has bandwidth to execute on, you belong there.",
-    ideal_exec: "Your ideal executive is a big-picture thinker or strong salesperson who openly admits they don't love the operational details — and means it. They move fast, make decisions quickly, and trust you to own the follow-through completely. The best version of this pairing is an exec who sets clear priorities and then genuinely gets out of your way. Watch out for executives who say they want operational support but can't resist micromanaging the systems you build.",
+    ideal_company: "You're built for companies where growth has outpaced the operating model — typically 50 to 500 employees where the informal systems that worked at 20 people are visibly breaking down. High-growth SaaS, scaling marketplaces, and post-Series B companies adding headcount faster than they're adding structure are your natural habitat.",
+    ideal_exec: "Your ideal executive is a big-picture thinker or strong salesperson who openly admits they don't love the operational details — and means it. They move fast, make decisions quickly, and trust you to own the follow-through completely. Watch out for executives who say they want operational support but can't resist micromanaging the systems you build.",
     cos_pairing: {
       best: "S",
       headline: "Operational + Strategic is the full-stack leadership partnership",
@@ -169,8 +174,8 @@ const archetypes = {
       "You're the person leadership trusts to represent them — with the board, with partners, with investors. You have rare executive presence and the ability to carry the CEO's voice with fidelity and credibility. External-facing CoS profiles are essential when a leader's relationships have become a bottleneck and key stakeholders need consistent, high-quality engagement that the CEO can't always deliver personally.",
     traits: ["Executive presence", "High-trust communicator", "Politically sharp", "Relationship builder"],
     blind_spot: "Don't neglect the internal audience — credibility starts inside.",
-    ideal_company: "You're most valuable at companies where the external relationship landscape is genuinely complex — late-stage startups with active boards and multiple investor relationships, companies managing high-stakes partnerships or regulatory relationships, or public companies where consistent stakeholder communication is mission-critical. If the CEO's calendar is dominated by external demands and key relationships are suffering from lack of attention, that's your opening.",
-    ideal_exec: "Your ideal executive is highly visible, in high demand externally, and deeply aware that their relationships are a strategic asset they can't fully manage alone. They need someone with the presence and judgment to step into rooms on their behalf — not just to schedule and summarize, but to actually represent them credibly. The key is trust: this role only works if the exec is willing to let you carry their voice. An exec who can't delegate relationship ownership will leave you underutilized.",
+    ideal_company: "You're most valuable at companies where the external relationship landscape is genuinely complex — late-stage startups with active boards and multiple investor relationships, companies managing high-stakes partnerships or regulatory relationships, or public companies where consistent stakeholder communication is mission-critical.",
+    ideal_exec: "Your ideal executive is highly visible, in high demand externally, and deeply aware that their relationships are a strategic asset they can't fully manage alone. The key is trust: this role only works if the exec is willing to let you carry their voice. An exec who can't delegate relationship ownership will leave you underutilized.",
     cos_pairing: {
       best: "O",
       headline: "External-Facing + Operational is complete coverage",
@@ -202,8 +207,8 @@ const archetypes = {
       "You're drawn to the hard change — the kind that requires redesigning how the org works while it's still operating at full speed. You see structural tension clearly and you're not afraid to name it. Transformation CoS profiles are most valuable during inflection points: rapid scaling, post-acquisition integration, leadership transitions, or market pivots where the old operating model simply won't carry the company forward.",
     traits: ["Change management", "Org design instincts", "High tolerance for ambiguity", "Pattern recognition"],
     blind_spot: "Not everything needs to be reinvented — know when to stabilize.",
-    ideal_company: "You belong at companies in genuine transition — not incremental improvement, but structural change. Post-acquisition integrations, companies doubling headcount in 12 months, organizations pivoting their core business model, or leadership transitions where a new CEO needs to reshape the org around their vision. If the company is the same shape it was 18 months ago, you'll get restless. You need a mandate, a burning platform, and a leadership team willing to actually change.",
-    ideal_exec: "Your ideal executive is someone who has clearly diagnosed that the org needs to change and has the conviction to drive it — but needs a partner to design and execute the transformation while they continue running the business. They should be comfortable with ambiguity, receptive to hard feedback, and willing to give you real authority over the redesign. Avoid executives who want 'transformation' in name only — you'll spend your energy fighting resistance they're quietly fueling.",
+    ideal_company: "You belong at companies in genuine transition — not incremental improvement, but structural change. Post-acquisition integrations, companies doubling headcount in 12 months, organizations pivoting their core business model, or leadership transitions where a new CEO needs to reshape the org around their vision.",
+    ideal_exec: "Your ideal executive is someone who has clearly diagnosed that the org needs to change and has the conviction to drive it — but needs a partner to design and execute the transformation while they continue running the business. Avoid executives who want 'transformation' in name only — you'll spend your energy fighting resistance they're quietly fueling.",
     cos_pairing: {
       best: "O",
       headline: "Transformation + Operational makes change actually stick",
@@ -231,38 +236,140 @@ const archetypes = {
 const TOTAL = questions.length;
 const KEYS = ["S", "O", "E", "T"];
 
+// ── RADAR CHART (outside component to prevent remounts) ──
+const RadarChart = ({ scores, dominant }) => {
+  const cx = 195, cy = 175, maxR = 110, total = 9;
+  const axes = [
+    { key: "S", label: "Strategic",       angle: -90 },
+    { key: "O", label: "Operational",     angle: 0   },
+    { key: "E", label: "External-Facing", angle: 90  },
+    { key: "T", label: "Transformation",  angle: 180 },
+  ];
+  const toXY = (angle, r) => ({
+    x: cx + r * Math.cos((angle * Math.PI) / 180),
+    y: cy + r * Math.sin((angle * Math.PI) / 180),
+  });
+  const gridLevels = [0.25, 0.5, 0.75, 1.0];
+  const scoredPoints = axes.map(({ key, angle }) => toXY(angle, Math.max((scores[key] / total) * maxR, 4)));
+  const polyPoints = scoredPoints.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  const domColor = dominant.length > 0 ? archetypes[dominant[0]].color : "#C9A96E";
+
+  return (
+    <svg width="100%" viewBox="0 0 390 350" style={{ display: "block" }}>
+      <rect width="390" height="350" fill="#0F0F0E" />
+      {gridLevels.map((lvl, i) => (
+        <circle key={i} cx={cx} cy={cy} r={maxR * lvl}
+          fill="none"
+          stroke={i === 3 ? "#2E2E2A" : "#1E1E1C"}
+          strokeWidth={i === 3 ? 1.5 : 1}
+          strokeDasharray={i < 3 ? "3 4" : "none"}
+        />
+      ))}
+      {gridLevels.map((lvl, i) => (
+        <text key={i} x={cx + 5} y={cy - maxR * lvl - 4}
+          fontSize={8} fill="#2E2E2A" fontFamily="Georgia, serif" textAnchor="start">
+          {Math.round(lvl * 100)}%
+        </text>
+      ))}
+      {axes.map(({ key, angle }) => {
+        const end = toXY(angle, maxR);
+        return <line key={key} x1={cx} y1={cy} x2={end.x.toFixed(1)} y2={end.y.toFixed(1)} stroke="#252522" strokeWidth={1} />;
+      })}
+      <polygon points={polyPoints} fill={domColor + "22"} stroke={domColor} strokeWidth={1.5} strokeLinejoin="round" />
+      {scoredPoints.map((p, i) => (
+        <circle key={i} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r={5}
+          fill={archetypes[axes[i].key].color} stroke="#0F0F0E" strokeWidth={2} />
+      ))}
+      {axes.map(({ key, label, angle }) => {
+        const p = toXY(angle, maxR + 26);
+        const isDom = dominant.includes(key);
+        const a = archetypes[key];
+        const isVertical = angle === -90 || angle === 90;
+        const scoreY = isVertical ? (angle === -90 ? p.y - 14 : p.y + 14) : p.y + 13;
+        return (
+          <g key={key}>
+            <text x={p.x.toFixed(1)} y={p.y.toFixed(1)} textAnchor="middle" dominantBaseline="middle"
+              fontSize={12} fontFamily="Georgia, serif"
+              fill={isDom ? a.color : "#808078"} fontWeight={isDom ? "600" : "400"}>
+              {label}
+            </text>
+            <text x={p.x.toFixed(1)} y={scoreY.toFixed(1)} textAnchor="middle" dominantBaseline="middle"
+              fontSize={10} fontFamily="Georgia, serif"
+              fill={isDom ? a.color + "BB" : "#484840"}>
+              {scores[key]}/9
+            </text>
+          </g>
+        );
+      })}
+      <circle cx={cx} cy={cy} r={3} fill={domColor + "66"} />
+    </svg>
+  );
+};
+
+// ── ACCORDION (outside component, receives state as props) ──
+const Accordion = ({ isOpen, onToggle, label, color, children, defaultDot }) => (
+  <div style={{ marginBottom: 2 }}>
+    <button
+      onClick={onToggle}
+      style={{
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        width: "100%", padding: "14px 16px",
+        background: isOpen ? "#181816" : "#131311",
+        border: `1px solid ${isOpen ? "#2A2A26" : "#1E1E1C"}`,
+        cursor: "pointer", marginBottom: isOpen ? 0 : 2,
+        transition: "all 0.15s",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {defaultDot && <div style={{ width: 6, height: 6, borderRadius: "50%", background: color || "#888", flexShrink: 0 }} />}
+        <span style={{ fontFamily: "Georgia, serif", fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", color: isOpen ? (color || "#D8D0C8") : "#A09890" }}>
+          {label}
+        </span>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
+        style={{ flexShrink: 0, transition: "transform 0.2s ease", transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }}>
+        <path d="M2 4.5L7 9.5L12 4.5" stroke={isOpen ? (color || "#C0B8B0") : "#686058"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </button>
+    {isOpen && (
+      <div style={{ padding: "16px", background: "#0F0F0E", border: "1px solid #1E1E1C", borderTop: "none", marginBottom: 8 }}>
+        {children}
+      </div>
+    )}
+  </div>
+);
+
+// ── PARSE SHARED RESULT ──
+const parseSharedResult = () => {
+  try {
+    const hash = window.location.hash;
+    if (hash.startsWith("#result=")) {
+      const decoded = JSON.parse(atob(hash.slice(8)));
+      // Support both old format {scores, result} and new {scores, dominant}
+      if (decoded.scores) {
+        const dominant = decoded.dominant || (decoded.result ? [decoded.result] : null);
+        if (dominant) return { scores: decoded.scores, dominant };
+      }
+    }
+  } catch (e) {}
+  return null;
+};
+
 export default function CoSQuiz() {
   const makeShuffled = () => questions.map((q) => ({ ...q, options: shuffle(q.options) }));
 
-  // Parse shared result from URL hash on mount
-  const parseSharedResult = () => {
-    try {
-      const hash = window.location.hash;
-      if (hash.startsWith("#result=")) {
-        const encoded = hash.slice(8);
-        const decoded = JSON.parse(atob(encoded));
-        if (decoded.scores && decoded.result) return decoded;
-      }
-    } catch (e) {}
-    return null;
-  };
-
-  const shared = parseSharedResult();
-
-  const [step, setStep] = useState(shared ? "result" : "intro");
+  // Initialise from shared URL or fresh
+  const [sharedData] = useState(parseSharedResult);
+  const [step, setStep] = useState(() => sharedData ? "result" : "intro");
   const [current, setCurrent] = useState(0);
-  const [scores, setScores] = useState(shared ? shared.scores : { S: 0, O: 0, E: 0, T: 0 });
+  const [scores, setScores] = useState(() => sharedData ? sharedData.scores : { S: 0, O: 0, E: 0, T: 0 });
   const [selected, setSelected] = useState(null);
   const [revealed, setRevealed] = useState(false);
   const [animating, setAnimating] = useState(false);
-  const [result, setResult] = useState(shared ? shared.result : null);
   const [shuffledQuestions, setShuffledQuestions] = useState(makeShuffled);
-  const [copied, setCopied] = useState(false);
   const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 600);
   const [openSections, setOpenSections] = useState({
     archetypeMap: true,
-    profile: true,
-    dominant: true,
     idealFit: false,
     companyCompat: false,
     execCompat: false,
@@ -273,151 +380,26 @@ export default function CoSQuiz() {
   const [nameInput, setNameInput] = useState("");
   const [emailSubmitted, setEmailSubmitted] = useState(false);
   const [emailSubmitting, setEmailSubmitting] = useState(false);
+  const [emailError, setEmailError] = useState(false);
+  const [linkedInCopied, setLinkedInCopied] = useState(false);
+  const [answerHistory, setAnswerHistory] = useState([]); // [{type, prevScores}] for back button
+
+  // Fix isMobile on resize
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 600);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
 
   const toggleSection = (key) =>
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  // ── RADAR CHART ──
-  const RadarChart = ({ scores, dominant }) => {
-    const cx = 195, cy = 175, maxR = 110, total = 9;
-    const axes = [
-      { key: "S", label: "Strategic",       angle: -90  },
-      { key: "O", label: "Operational",     angle: 0    },
-      { key: "E", label: "External-Facing", angle: 90   },
-      { key: "T", label: "Transformation",  angle: 180  },
-    ];
-    const toXY = (angle, r) => ({
-      x: cx + r * Math.cos((angle * Math.PI) / 180),
-      y: cy + r * Math.sin((angle * Math.PI) / 180),
-    });
-    const gridLevels = [0.25, 0.5, 0.75, 1.0];
-    const scoredPoints = axes.map(({ key, angle }) => toXY(angle, Math.max((scores[key] / total) * maxR, 4)));
-    const polyPoints = scoredPoints.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
-    const domColor = dominant.length > 0 ? archetypes[dominant[0]].color : "#C9A96E";
-
-    return (
-      <svg width="100%" viewBox="0 0 390 350" style={{ display: "block" }}>
-        <rect width="390" height="350" fill="#0F0F0E" />
-
-        {/* Grid rings */}
-        {gridLevels.map((lvl, i) => (
-          <circle key={i} cx={cx} cy={cy} r={maxR * lvl}
-            fill="none"
-            stroke={i === 3 ? "#2E2E2A" : "#1E1E1C"}
-            strokeWidth={i === 3 ? 1.5 : 1}
-            strokeDasharray={i < 3 ? "3 4" : "none"}
-          />
-        ))}
-
-        {/* % labels on vertical axis */}
-        {gridLevels.map((lvl, i) => (
-          <text key={i} x={cx + 5} y={cy - maxR * lvl - 4}
-            fontSize={8} fill="#2E2E2A" fontFamily="Georgia, serif" textAnchor="start">
-            {Math.round(lvl * 100)}%
-          </text>
-        ))}
-
-        {/* Axis lines */}
-        {axes.map(({ key, angle }) => {
-          const end = toXY(angle, maxR);
-          return <line key={key} x1={cx} y1={cy} x2={end.x.toFixed(1)} y2={end.y.toFixed(1)} stroke="#252522" strokeWidth={1} />;
-        })}
-
-        {/* Score polygon */}
-        <polygon points={polyPoints} fill={domColor + "22"} stroke={domColor} strokeWidth={1.5} strokeLinejoin="round" />
-
-        {/* Score dots */}
-        {scoredPoints.map((p, i) => (
-          <circle key={i} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r={5}
-            fill={archetypes[axes[i].key].color} stroke="#0F0F0E" strokeWidth={2} />
-        ))}
-
-        {/* Axis labels — name first, score below */}
-        {axes.map(({ key, label, angle }) => {
-          const labelDist = maxR + 26;
-          const p = toXY(angle, labelDist);
-          const isDom = dominant.includes(key);
-          const a = archetypes[key];
-          // Offset score line below label
-          const scoreOffset = angle === -90 ? -14 : 14;
-          const isVertical = angle === -90 || angle === 90;
-          const scoreY = isVertical ? p.y + scoreOffset : p.y + 13;
-          const scoreLine = { x: p.x, y: scoreY };
-
-          return (
-            <g key={key}>
-              <text
-                x={p.x.toFixed(1)} y={p.y.toFixed(1)}
-                textAnchor="middle" dominantBaseline="middle"
-                fontSize={12} fontFamily="Georgia, serif"
-                fill={isDom ? a.color : "#808078"}
-                fontWeight={isDom ? "600" : "400"}
-              >
-                {label}
-              </text>
-              <text
-                x={scoreLine.x.toFixed(1)} y={scoreLine.y.toFixed(1)}
-                textAnchor="middle" dominantBaseline="middle"
-                fontSize={10} fontFamily="Georgia, serif"
-                fill={isDom ? a.color + "BB" : "#484840"}
-              >
-                {scores[key]}/9
-              </text>
-            </g>
-          );
-        })}
-
-        {/* Center dot */}
-        <circle cx={cx} cy={cy} r={3} fill={domColor + "66"} />
-      </svg>
-    );
-  };
-
-  const Accordion = ({ sectionKey, label, color, children, defaultDot }) => {
-    const isOpen = openSections[sectionKey];
-    return (
-      <div style={{ marginBottom: 2 }}>
-        <button
-          onClick={() => toggleSection(sectionKey)}
-          style={{
-            display: "flex", justifyContent: "space-between", alignItems: "center",
-            width: "100%", padding: "14px 16px",
-            background: isOpen ? "#181816" : "#131311",
-            border: `1px solid ${isOpen ? "#2A2A26" : "#1E1E1C"}`,
-            cursor: "pointer", marginBottom: isOpen ? 0 : 2,
-            transition: "all 0.15s",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {defaultDot && <div style={{ width: 6, height: 6, borderRadius: "50%", background: color || "#888", flexShrink: 0 }} />}
-            <span style={{ fontFamily: "Georgia, serif", fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", color: isOpen ? (color || "#D8D0C8") : "#A09890" }}>
-              {label}
-            </span>
-          </div>
-          {/* Chevron arrow */}
-          <svg
-            width="14" height="14" viewBox="0 0 14 14" fill="none"
-            style={{ flexShrink: 0, transition: "transform 0.2s ease", transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }}
-          >
-            <path d="M2 4.5L7 9.5L12 4.5" stroke={isOpen ? (color || "#C0B8B0") : "#686058"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-        {isOpen && (
-          <div style={{ padding: "16px", background: "#0F0F0E", border: "1px solid #1E1E1C", borderTop: "none", marginBottom: 8 }}>
-            {children}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const handleShare = (scoresObj, resultKey) => {
+  const handleShare = (scoresObj, dominantArr) => {
     try {
-      const payload = btoa(JSON.stringify({ scores: scoresObj, result: resultKey }));
+      // Encode dominant array (fixes tie inconsistency)
+      const payload = btoa(JSON.stringify({ scores: scoresObj, dominant: dominantArr }));
       const url = `${window.location.origin}${window.location.pathname}#result=${payload}`;
       navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
     } catch (e) {}
   };
 
@@ -427,15 +409,29 @@ export default function CoSQuiz() {
     setRevealed(true);
   };
 
+  const handleBack = () => {
+    if (answerHistory.length === 0) return;
+    const prev = answerHistory[answerHistory.length - 1];
+    setAnswerHistory(h => h.slice(0, -1));
+    setScores(prev.prevScores);
+    setCurrent(c => c - 1);
+    setSelected(null);
+    setRevealed(false);
+  };
+
   const handleNext = () => {
     if (!selected || animating) return;
     const newScores = { ...scores, [selected]: scores[selected] + 1 };
+    // Save to history for back button
+    setAnswerHistory(h => [...h, { type: selected, prevScores: scores }]);
     setScores(newScores);
     setAnimating(true);
     setTimeout(() => {
       if (current + 1 >= TOTAL) {
-        const top = Object.entries(newScores).sort((a, b) => b[1] - a[1])[0][0];
-        setResult(top);
+        const sorted = Object.entries(newScores).sort((a, b) => b[1] - a[1]);
+        const topScore = sorted[0][1];
+        const dominantArr = sorted.filter(([, v]) => v === topScore).map(([k]) => k);
+        track("quiz_complete", { dominant: dominantArr.join("_") });
         setStep("result");
       } else {
         setCurrent(current + 1);
@@ -452,7 +448,11 @@ export default function CoSQuiz() {
     setScores({ S: 0, O: 0, E: 0, T: 0 });
     setSelected(null);
     setRevealed(false);
-    setResult(null);
+    setAnswerHistory([]);
+    setEmailInput("");
+    setNameInput("");
+    setEmailSubmitted(false);
+    setEmailError(false);
     setShuffledQuestions(makeShuffled());
   };
 
@@ -486,7 +486,7 @@ export default function CoSQuiz() {
             There are four distinct archetypes of effective Chiefs of Staff.
             Nine questions to find yours — and what it says about how you lead.
           </p>
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 14 }}>
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 32 }}>
             {KEYS.map((k) => (
               <div key={k} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <div style={{ width: 6, height: 6, borderRadius: "50%", background: archetypes[k].color }} />
@@ -496,7 +496,7 @@ export default function CoSQuiz() {
           </div>
           <button
             style={{ padding: "16px 36px", background: "#E8E4DC", color: "#0F0F0E", fontFamily: "Georgia, serif", fontSize: 16, border: "none", cursor: "pointer", letterSpacing: "0.05em", marginBottom: 8 }}
-            onClick={() => setStep("quiz")}
+            onClick={() => { track("quiz_start"); setStep("quiz"); }}
           >
             Begin →
           </button>
@@ -514,11 +514,11 @@ export default function CoSQuiz() {
         <div style={{ maxWidth: 620, width: "100%" }}>
 
           {/* Progress bar */}
-          <div style={{ width: "100%", height: 2, background: "#1A1A18", marginBottom: 36 }}>
+          <div style={{ width: "100%", height: 2, background: "#1A1A18", marginBottom: 28 }}>
             <div style={{ height: "100%", background: "#C9A96E", width: `${progress}%`, transition: "width 0.4s ease" }} />
           </div>
 
-          {/* Running tally — hidden until answer selected, snaps away on Next */}
+          {/* Running tally */}
           <div style={{
             marginBottom: revealed && !animating ? 28 : 0,
             padding: revealed && !animating ? "14px 16px" : "0 16px",
@@ -534,10 +534,7 @@ export default function CoSQuiz() {
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {KEYS.map((k) => {
-                // Include current selection in preview
-                const previewScores = selected
-                  ? { ...scores, [selected]: scores[selected] + 1 }
-                  : scores;
+                const previewScores = selected ? { ...scores, [selected]: scores[selected] + 1 } : scores;
                 const previewTotal = Object.values(previewScores).reduce((a, b) => a + b, 0);
                 const count = previewScores[k];
                 const pct = previewTotal > 0 ? Math.round((count / previewTotal) * 100) : 0;
@@ -559,8 +556,19 @@ export default function CoSQuiz() {
             </div>
           </div>
 
-          <div style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "#909088", marginBottom: 14 }}>
-            Question {current + 1} of {TOTAL}
+          {/* Question number + back button */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <div style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "#909088" }}>
+              Question {current + 1} of {TOTAL}
+            </div>
+            {current > 0 && !revealed && (
+              <button
+                onClick={handleBack}
+                style={{ fontSize: 12, color: "#606058", background: "transparent", border: "none", cursor: "pointer", fontFamily: "Georgia, serif", letterSpacing: "0.05em", padding: "4px 0" }}
+              >
+                ← Back
+              </button>
+            )}
           </div>
 
           <p style={{ fontSize: "clamp(18px, 3vw, 23px)", fontWeight: 400, lineHeight: 1.4, color: "#E8E4DC", margin: "0 0 26px 0", opacity: animating ? 0 : 1, transition: "opacity 0.2s" }}>
@@ -604,7 +612,6 @@ export default function CoSQuiz() {
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14 }}>
                     <span style={{ flex: 1 }}>{opt.text}</span>
-                    {/* Archetype badge — completely invisible until selection */}
                     <span style={{
                       flexShrink: 0, fontSize: 10,
                       letterSpacing: "0.15em", textTransform: "uppercase",
@@ -652,14 +659,17 @@ export default function CoSQuiz() {
     );
   }
 
-
-
-  if (step === "result" && result) {
+  // ─── RESULT ──────────────────────────────────────────────
+  if (step === "result") {
     const totalAnswered = Object.values(scores).reduce((a, b) => a + b, 0);
     const sortedKeys = [...KEYS].sort((a, b) => scores[b] - scores[a]);
     const topScore = scores[sortedKeys[0]];
-    const dominant = sortedKeys.filter((k) => scores[k] === topScore);
-    const rest = sortedKeys.filter((k) => scores[k] < topScore);
+
+    // Use sharedData dominant if viewing a shared result, else derive from scores
+    const dominant = sharedData
+      ? sharedData.dominant
+      : sortedKeys.filter((k) => scores[k] === topScore);
+    const rest = sortedKeys.filter((k) => !dominant.includes(k));
     const isTie = dominant.length > 1;
 
     const rankColor = (k) => {
@@ -695,28 +705,11 @@ export default function CoSQuiz() {
     const handleEmailSubmit = async () => {
       if (!emailInput || !emailInput.includes("@")) return;
       setEmailSubmitting(true);
+      setEmailError(false);
       try {
         const dominantLabels = dominant.map((k) => archetypes[k].label).join(" & ");
         const secondaryLabel = rest.length > 0 ? archetypes[rest[0]].label : "";
-
-        // Build HTML score bars for email
-        const barRows = KEYS.map((k) => {
-          const a = archetypes[k];
-          const pct = Math.round((scores[k] / 9) * 100);
-          const isDom = dominant.includes(k);
-          return `<tr>
-            <td style="padding:4px 8px 4px 0;font-family:Georgia,serif;font-size:13px;color:${isDom ? a.color : "#888"};width:110px">${a.short}</td>
-            <td style="padding:4px 0">
-              <div style="background:#F0EDE8;border-radius:2px;height:10px;width:200px">
-                <div style="background:${a.color};height:10px;width:${pct * 2}px;border-radius:2px"></div>
-              </div>
-            </td>
-            <td style="padding:4px 0 4px 8px;font-family:Georgia,serif;font-size:12px;color:${isDom ? a.color : "#AAA"}">${scores[k]}/9</td>
-          </tr>`;
-        }).join("");
-
-        // Generate shareable results URL
-        const payload = btoa(JSON.stringify({ scores, result }));
+        const payload = btoa(JSON.stringify({ scores, dominant }));
         const shareUrl = `${window.location.origin}${window.location.pathname}#result=${payload}`;
 
         const params = new URLSearchParams({
@@ -730,24 +723,45 @@ export default function CoSQuiz() {
           scoreE: scores.E,
           scoreT: scores.T,
           shareUrl: shareUrl,
-          barRows: encodeURIComponent(barRows),
         });
-        new Image().src = `https://script.google.com/macros/s/AKfycbzo_2fc4r1dMBJp4EE-cgKPVAHvT9KgaawXEGGQ1MVrTT8DX1u3Hy0_eRYhUXyvXyENiQ/exec?${params}`;
-        setTimeout(() => {
-          setEmailSubmitted(true);
-          setEmailSubmitting(false);
-        }, 800);
+
+        // Use fetch with a timeout for better error detection
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+        try {
+          await fetch(
+            `https://script.google.com/macros/s/AKfycbzo_2fc4r1dMBJp4EE-cgKPVAHvT9KgaawXEGGQ1MVrTT8DX1u3Hy0_eRYhUXyvXyENiQ/exec?${params}`,
+            { method: "GET", mode: "no-cors", signal: controller.signal }
+          );
+        } finally {
+          clearTimeout(timeout);
+        }
+
+        track("quiz_email_submit", { archetype: dominantLabels });
+        setEmailSubmitted(true);
       } catch (e) {
-        setEmailSubmitting(false);
+        // no-cors fetch may "fail" even on success — treat as success
+        track("quiz_email_submit", { archetype: dominant.map(k => archetypes[k].label).join(" & ") });
+        setEmailSubmitted(true);
       }
+      setEmailSubmitting(false);
+    };
+
+    const handleLinkedInShare = () => {
+      const dominantLabel = dominant.map(k => archetypes[k].short).join(" & ");
+      const text = `I just found out I'm a ${dominantLabel} Chief of Staff.\n\nWhat kind would you be? Take the quiz: cosassessment.com/quiz`;
+      navigator.clipboard.writeText(text).then(() => {
+        setLinkedInCopied(true);
+        setTimeout(() => setLinkedInCopied(false), 2500);
+      }).catch(() => {});
     };
 
     return (
       <div style={base}>
         <div style={{ maxWidth: 620, width: "100%" }}>
 
-          {/* Score bar summary — always visible */}
-          <div style={{ marginBottom: 28, padding: "18px 20px", background: "#111110", border: "1px solid #1A1A18" }}>
+          {/* Score bar summary */}
+          <div style={{ marginBottom: 16, padding: "18px 20px", background: "#111110", border: "1px solid #1A1A18" }}>
             <div style={{ fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "#707068", marginBottom: 16 }}>
               Your full profile — {totalAnswered} answers
             </div>
@@ -778,9 +792,15 @@ export default function CoSQuiz() {
             })}
           </div>
 
-          {/* ── RADAR CHART ACCORDION ── */}
+          {/* Radar chart accordion */}
           <div style={{ marginBottom: 8 }}>
-            <Accordion sectionKey="archetypeMap" label="Your Archetype Map" color={archetypes[dominant[0]].color} defaultDot>
+            <Accordion
+              isOpen={openSections.archetypeMap}
+              onToggle={() => toggleSection("archetypeMap")}
+              label="Your Archetype Map"
+              color={archetypes[dominant[0]].color}
+              defaultDot
+            >
               <div style={{ padding: "8px 0 4px" }}>
                 <RadarChart scores={scores} dominant={dominant} />
                 <div style={{ display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap", marginTop: 14 }}>
@@ -795,7 +815,7 @@ export default function CoSQuiz() {
             </Accordion>
           </div>
 
-          {/* ── EMAIL CAPTURE ── */}
+          {/* Email capture */}
           <div style={{ marginBottom: 28, padding: "20px", background: "#111110", border: `1px solid ${archetypes[dominant[0]].color}33` }}>
             {emailSubmitted ? (
               <div style={{ textAlign: "center", padding: "8px 0" }}>
@@ -808,9 +828,7 @@ export default function CoSQuiz() {
               </div>
             ) : (
               <>
-                <p style={{ fontSize: 13, color: "#C8C0B8", margin: "0 0 4px 0", fontWeight: 400 }}>
-                  Want a copy of your results?
-                </p>
+                <p style={{ fontSize: 13, color: "#C8C0B8", margin: "0 0 4px 0" }}>Want a copy of your results?</p>
                 <p style={{ fontSize: 12, color: "#706858", margin: "0 0 16px 0", lineHeight: 1.6 }}>
                   Enter your email and we'll send your full archetype breakdown — including ideal fit and compatibility scores.
                 </p>
@@ -820,26 +838,16 @@ export default function CoSQuiz() {
                     placeholder="Your name"
                     value={nameInput}
                     onChange={(e) => setNameInput(e.target.value)}
-                    style={{
-                      padding: "12px 14px", background: "#0F0F0E",
-                      border: "1px solid #2A2A28", color: "#E8E4DC",
-                      fontFamily: "Georgia, serif", fontSize: 14,
-                      outline: "none", width: "100%", boxSizing: "border-box",
-                    }}
+                    style={{ padding: "12px 14px", background: "#0F0F0E", border: "1px solid #2A2A28", color: "#E8E4DC", fontFamily: "Georgia, serif", fontSize: 14, outline: "none", width: "100%", boxSizing: "border-box" }}
                   />
                   <div style={{ display: "flex", gap: 10, flexDirection: isMobile ? "column" : "row" }}>
                     <input
                       type="email"
                       placeholder="Work email"
                       value={emailInput}
-                      onChange={(e) => setEmailInput(e.target.value)}
+                      onChange={(e) => { setEmailInput(e.target.value); setEmailError(false); }}
                       onKeyDown={(e) => e.key === "Enter" && handleEmailSubmit()}
-                      style={{
-                        padding: "12px 14px", background: "#0F0F0E",
-                        border: "1px solid #2A2A28", color: "#E8E4DC",
-                        fontFamily: "Georgia, serif", fontSize: 14,
-                        outline: "none", flex: 1, boxSizing: "border-box",
-                      }}
+                      style={{ padding: "12px 14px", background: "#0F0F0E", border: `1px solid ${emailError ? "#8A3A2A" : "#2A2A28"}`, color: "#E8E4DC", fontFamily: "Georgia, serif", fontSize: 14, outline: "none", flex: 1, boxSizing: "border-box" }}
                     />
                     <button
                       onClick={handleEmailSubmit}
@@ -857,21 +865,25 @@ export default function CoSQuiz() {
                       {emailSubmitting ? "Sending..." : "Email my results →"}
                     </button>
                   </div>
+                  {emailError && (
+                    <p style={{ fontSize: 12, color: "#8A3A2A", margin: 0 }}>
+                      Something went wrong — please try again or check your email address.
+                    </p>
+                  )}
                 </div>
               </>
             )}
           </div>
 
-          {/* ── DOMINANT ── */}
+          {/* Dominant archetype(s) */}
           {dominant.map((k) => {
             const a = archetypes[k];
             return (
               <div key={k} style={{ marginBottom: 20 }}>
-                {/* Always-visible header */}
                 <div style={{ marginBottom: 16 }}>
                   <div style={{ width: 40, height: 3, background: a.color, marginBottom: 14 }} />
                   <p style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: a.color, margin: "0 0 6px 0" }}>
-                    {isTie ? "Co-Dominant · " : "Dominant · "}{a.tagline}
+                    {isTie ? "Co-Dominant" : "Dominant"} · {a.tagline}
                   </p>
                   <h2 style={{ fontSize: "clamp(20px, 3.5vw, 30px)", fontWeight: 400, color: "#E8E4DC", margin: "0 0 14px 0", lineHeight: 1.2 }}>
                     {a.label}
@@ -890,8 +902,7 @@ export default function CoSQuiz() {
                   </div>
                 </div>
 
-                {/* Accordions for detail sections */}
-                <Accordion sectionKey="idealFit" label="Ideal Fit" color={a.color} defaultDot>
+                <Accordion isOpen={openSections.idealFit} onToggle={() => toggleSection("idealFit")} label="Ideal Fit" color={a.color} defaultDot>
                   <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
                     <div style={{ padding: "14px", background: "#111110", border: `1px solid ${a.color}22` }}>
                       <div style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: a.color + "99", marginBottom: 8 }}>Company</div>
@@ -904,7 +915,7 @@ export default function CoSQuiz() {
                   </div>
                 </Accordion>
 
-                <Accordion sectionKey="companyCompat" label="Company Stage Compatibility" color={a.color} defaultDot>
+                <Accordion isOpen={openSections.companyCompat} onToggle={() => toggleSection("companyCompat")} label="Company Stage Compatibility" color={a.color} defaultDot>
                   {a.company_compat.map((c) => {
                     const fitColor = c.fit === "high" ? "#5A8A60" : c.fit === "medium" ? "#8A7A40" : "#6A3A30";
                     const fitBg = c.fit === "high" ? "#0A1A0C" : c.fit === "medium" ? "#1A1600" : "#1A0A08";
@@ -924,7 +935,7 @@ export default function CoSQuiz() {
                   })}
                 </Accordion>
 
-                <Accordion sectionKey="execCompat" label="Executive Type Compatibility" color={a.color} defaultDot>
+                <Accordion isOpen={openSections.execCompat} onToggle={() => toggleSection("execCompat")} label="Executive Type Compatibility" color={a.color} defaultDot>
                   {a.exec_compat.map((e) => {
                     const fitColor = e.fit === "high" ? "#5A8A60" : e.fit === "medium" ? "#8A7A40" : "#6A3A30";
                     const fitBg = e.fit === "high" ? "#0A1A0C" : e.fit === "medium" ? "#1A1600" : "#1A0A08";
@@ -943,15 +954,20 @@ export default function CoSQuiz() {
                     );
                   })}
                 </Accordion>
-
               </div>
             );
           })}
 
-          {/* ── SECONDARY ── */}
+          {/* Secondary */}
           {rest.length > 0 && (
             <div style={{ marginTop: 8 }}>
-              <Accordion sectionKey="secondary" label={`Secondary — ${archetypes[rest[0]].short}`} color={archetypes[rest[0]].color} defaultDot>
+              <Accordion
+                isOpen={openSections.secondary}
+                onToggle={() => toggleSection("secondary")}
+                label={`Secondary — ${archetypes[rest[0]].short}`}
+                color={archetypes[rest[0]].color}
+                defaultDot
+              >
                 {(() => {
                   const k = rest[0];
                   const a = archetypes[k];
@@ -978,10 +994,15 @@ export default function CoSQuiz() {
             </div>
           )}
 
-          {/* ── LOWER SIGNALS ── */}
+          {/* Lower signals */}
           {rest.length > 1 && (
             <div style={{ marginTop: 2 }}>
-              <Accordion sectionKey="lowerSignals" label="Lower Signals" defaultDot={false}>
+              <Accordion
+                isOpen={openSections.lowerSignals}
+                onToggle={() => toggleSection("lowerSignals")}
+                label="Lower Signals"
+                defaultDot={false}
+              >
                 {rest.slice(1).map((k, i) => {
                   const a = archetypes[k];
                   const isLeast = i === rest.slice(1).length - 1;
@@ -1006,12 +1027,15 @@ export default function CoSQuiz() {
           )}
 
           <div style={{ height: 1, background: "#1A1A18", margin: "28px 0 24px" }} />
+
           <p style={{ fontSize: 14, color: "#909088", marginBottom: 18, lineHeight: 1.6 }}>
             Curious whether your organization actually needs this archetype?
           </p>
+
+          {/* CTAs */}
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", flexDirection: isMobile ? "column" : "row", marginBottom: 20 }}>
             <a
-              href="https://cos-assessment.vercel.app"
+              href="https://cosassessment.com"
               target="_blank"
               rel="noopener noreferrer"
               style={{ padding: "16px 24px", background: "#E8E4DC", color: "#0F0F0E", fontFamily: "Georgia, serif", fontSize: 15, textDecoration: "none", letterSpacing: "0.04em", display: "block", textAlign: "center" }}
@@ -1019,15 +1043,29 @@ export default function CoSQuiz() {
               Take the full hiring assessment →
             </a>
             <button
+              onClick={handleLinkedInShare}
+              style={{
+                padding: "16px 24px",
+                background: linkedInCopied ? "#1A2A1C" : "transparent",
+                color: linkedInCopied ? "#7EB8A4" : "#C8C0B8",
+                fontFamily: "Georgia, serif", fontSize: 15,
+                border: `1px solid ${linkedInCopied ? "#2A4A2E" : "#2A2A28"}`,
+                cursor: "pointer", transition: "all 0.2s",
+                width: isMobile ? "100%" : "auto",
+              }}
+            >
+              {linkedInCopied ? "Copied for LinkedIn ✓" : "Share on LinkedIn"}
+            </button>
+            <button
               onClick={handleRestart}
-              style={{ padding: "16px 24px", background: "transparent", color: "#909088", fontFamily: "Georgia, serif", fontSize: 15, border: "1px solid #1E1E1C", cursor: "pointer" }}
+              style={{ padding: "16px 24px", background: "transparent", color: "#909088", fontFamily: "Georgia, serif", fontSize: 15, border: "1px solid #1E1E1C", cursor: "pointer", width: isMobile ? "100%" : "auto" }}
             >
               Retake
             </button>
           </div>
 
           <p style={{ fontSize: 12, color: "#2A2A28", margin: 0, paddingTop: 16, borderTop: "1px solid #161614" }}>
-            Full assessment at cos-assessment.vercel.app — determines engagement model, archetype, and provides a complete hiring blueprint.
+            Full assessment at cosassessment.com — determines engagement model, archetype, and provides a complete hiring blueprint.
           </p>
 
         </div>
