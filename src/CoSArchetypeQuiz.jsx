@@ -882,12 +882,6 @@ export default function CoSQuiz() {
               Take the full hiring assessment →
             </a>
             <button
-              onClick={() => handleShare(scores, result)}
-              style={{ padding: "16px 24px", background: copied ? "#1A2A1C" : "transparent", color: copied ? "#7EB8A4" : "#E8E4DC", fontFamily: "Georgia, serif", fontSize: 15, border: copied ? "1px solid #2A4A2E" : "1px solid #282826", cursor: "pointer", transition: "all 0.2s" }}
-            >
-              {copied ? "Link copied ✓" : "Share my result"}
-            </button>
-            <button
               onClick={handleRestart}
               style={{ padding: "16px 24px", background: "transparent", color: "#909088", fontFamily: "Georgia, serif", fontSize: 15, border: "1px solid #1E1E1C", cursor: "pointer" }}
             >
