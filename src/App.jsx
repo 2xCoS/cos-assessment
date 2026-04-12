@@ -1,5 +1,3 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import CoSArchetypeQuiz from "./CoSArchetypeQuiz";
 import { useState, useEffect } from "react";
 
 const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzo_2fc4r1dMBJp4EE-cgKPVAHvT9KgaawXEGGQ1MVrTT8DX1u3Hy0_eRYhUXyvXyENiQ/exec";
@@ -55,7 +53,7 @@ const PHASE1_QUESTIONS = [
   { id: "meetings", question: "How many hours per week are you in meetings?", subtext: "All meetings \u2014 1:1s, team syncs, external calls", options: [{ label: "Under 15", value: 1, icon: "\u25A1" },{ label: "15\u201325", value: 2, icon: "\u25A1\u25A1" },{ label: "25\u201335", value: 3, icon: "\u25A1\u25A1\u25A1" },{ label: "35+", value: 4, icon: "\u25A1\u25A1\u25A1\u25A1" }] },
   { id: "crossfunc", question: "How often do cross-functional initiatives stall or misalign?", subtext: "Projects that span multiple teams or departments", options: [{ label: "Rarely", value: 1, icon: "\u25B3" },{ label: "Occasionally", value: 2, icon: "\u25B3\u25B3" },{ label: "Frequently", value: 3, icon: "\u25B3\u25B3\u25B3" },{ label: "It's chaos", value: 4, icon: "\u25B3\u25B3\u25B3\u25B3" }] },
   { id: "delegate", question: "Is there someone who can represent you in a room?", subtext: "Someone who knows your thinking well enough to act on your behalf", options: [{ label: "Yes, reliably", value: 1, icon: "\u25CF" },{ label: "Sort of", value: 2, icon: "\u25CF\u25CB" },{ label: "Not really", value: 3, icon: "\u25CB\u25CF" },{ label: "Absolutely not", value: 4, icon: "\u25CB" }] },
-  { id: "stage", question: "How many employees are in your organization?", subtext: "Full-time or full-time equivalent", options: [{ label: "1\u201320", value: 1, icon: "\u22A1" },{ label: "21\u201350", value: 1.5, icon: "\u22A1" },{ label: "51\u2013100", value: 2, icon: "\u22A1\u22A1" },{ label: "101\u2013250", value: 2.5, icon: "\u22A1\u22A1" },{ label: "251\u20131,000", value: 3, icon: "\u22A1\u22A1\u22A1" },{ label: "1,000+", value: 4, icon: "\u22A1\u22A1\u22A1\u22A1" }] },
+  { id: "stage", question: "How many employees are in your organization?", subtext: "Full-time or full-time equivalent", options: [{ label: "Under 10", value: 0.5, icon: "\u22A1" },{ label: "10\u201320", value: 1, icon: "\u22A1" },{ label: "21\u201350", value: 1.5, icon: "\u22A1" },{ label: "51\u2013100", value: 2, icon: "\u22A1\u22A1" },{ label: "101\u2013250", value: 2.5, icon: "\u22A1\u22A1" },{ label: "251\u20131,000", value: 3, icon: "\u22A1\u22A1\u22A1" },{ label: "1,000+", value: 4, icon: "\u22A1\u22A1\u22A1\u22A1" }] },
   { id: "duration", question: "How long do you anticipate needing this support?", subtext: "Think about whether this is a season or a permanent shift", options: [{ label: "A specific initiative (3\u20136 months)", value: "project", icon: "\u29D6" },{ label: "A transition period (6\u201312 months)", value: "transition", icon: "\u29D7" },{ label: "Ongoing, but not ready for a full hire", value: "fractional", icon: "\u25D0" },{ label: "Permanently \u2014 this is a core role", value: "permanent", icon: "\u25CF" }] },
   { id: "budget", question: "What's your realistic budget for this role?", subtext: "Be honest \u2014 it shapes the recommendation", options: [{ label: "Under $80K / year", value: "low", icon: "$" },{ label: "$80K\u2013$150K / year", value: "mid", icon: "$$" },{ label: "$150K\u2013$250K / year", value: "high", icon: "$$$" },{ label: "$250K+ / year", value: "top", icon: "$$$$" }] },
 ];
@@ -149,6 +147,12 @@ function getPhase1Result(answers, context) {
   if (ctx.driver === "fundraising") f.push("Fundraising is a defined period \u2014 fractional support can cover the sprint");
   if (ctx.driver === "scaling") ft.push("Scaling challenges tend to persist \u2014 a CoS embedded in the rhythm helps more");
   
+  // Hard gate: under 10 employees → fractional only (never full-time)
+  if (stage < 1) {
+    ft.length = 0;
+    f.push("At under 10 employees, fractional is the right model \u2014 your needs will shift fast as you grow");
+  }
+  
   const isFrac = f.length > ft.length, isDef = Math.abs(f.length - ft.length) >= 2;
   return { need: "yes", totalScore, driver: ctx.driver || null, model: isFrac ? "fractional" : "fulltime", strength: isDef ? "strong" : "lean",
     modelTitle: isFrac ? (isDef ? "Fractional Chief of Staff" : "Likely Fractional") : (isDef ? "Full-Time Chief of Staff" : "Likely Full-Time"),
@@ -185,7 +189,7 @@ function submitToSheets(payload) {
   } catch (err) { console.error("Sheet error:", err); return false; }
 }
 
-function ChiefOfStaffAssessment() {
+export default function ChiefOfStaffAssessment() {
   const [phase, setPhase] = useState("intro");
   const [step, setStep] = useState(0);
   const [p1Answers, setP1Answers] = useState({});
@@ -1189,16 +1193,3 @@ ${dayOne || dayThirty ? '<h2>Your Priorities</h2>' + (dayOne ? '<p style="font-s
     </div>
   );
 }
-
-function Root() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<ChiefOfStaffAssessment />} />
-        <Route path="/quiz" element={<CoSArchetypeQuiz />} />
-      </Routes>
-    </BrowserRouter>
-  );
-}
-
-export default Root;
